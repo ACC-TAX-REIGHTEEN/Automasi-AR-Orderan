@@ -167,6 +167,7 @@ for penagih, group_df in groups:
             
     current_out_row += 2
 
+# --- BAGIAN AUTO-FIT KOLOM YANG SUDAH DIPERBAIKI ---
 sel_tergabung = set()
 for rentang in ws_out.merged_cells.ranges:
     for baris in range(rentang.min_row, rentang.max_row + 1):
@@ -175,6 +176,11 @@ for rentang in ws_out.merged_cells.ranges:
 
 for c_idx in range(1, ws_out.max_column + 1):
     huruf_kolom = get_column_letter(c_idx)
+    
+    if 9 <= c_idx <= 16:
+        ws_out.column_dimensions[huruf_kolom].width = 37
+        continue
+        
     panjang_maksimal = 0
     
     for r_idx in range(1, ws_out.max_row + 1):
@@ -194,7 +200,7 @@ for c_idx in range(1, ws_out.max_column + 1):
     if panjang_maksimal > 0:
         lebar_sekarang = ws_out.column_dimensions[huruf_kolom].width
         if lebar_sekarang is None:
-            lebar_sekarang = 8.43
+            lebar_sekarang = 37
             
         lebar_disesuaikan = panjang_maksimal + 2.5
         if lebar_disesuaikan > lebar_sekarang:
@@ -209,9 +215,7 @@ for indeks_baris in range(1, ws_out.max_row + 1):
             break
             
     if baris_ttd:
-        ws_out.row_dimensions[indeks_baris].height = 50
-    else:
-        ws_out.row_dimensions[indeks_baris].height = None
+        ws_out.row_dimensions[indeks_baris].height = 130
 
 wb_out.save('Print_AR.xlsx')
 print("--> Proses selesai, file telah disimpan sebagai Print_AR.xlsx")
