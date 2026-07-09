@@ -4,7 +4,7 @@ import time
 
 print("--> PROSES 1: PEMBERSIHAN DATA (CLEANING)")
 
-file_path = 'ExportFile.xls'
+file_path = 'Piutang.xls'
 
 if not os.path.exists(file_path):
     print(f"--> File '{file_path}' tidak ditemukan. Pastikan file ada.")
