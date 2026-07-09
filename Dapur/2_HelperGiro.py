@@ -1,4 +1,20 @@
 import pandas as pd
+import os
+
+config_file = 'config.conf'
+run_giro = False
+
+if os.path.exists(config_file):
+    with open(config_file, 'r') as f:
+        lines = [line.strip() for line in f.readlines()]
+    if '[GIRO]' in lines:
+        idx = lines.index('[GIRO]')
+        if idx + 1 < len(lines) and lines[idx + 1] == 'YA':
+            run_giro = True
+
+if not run_giro:
+    print("--> Proses GIRO di-skip berdasarkan config.conf.")
+    exit()
 
 df = pd.read_excel('Giro.xls', header=None)
 
