@@ -1,122 +1,108 @@
 import pandas as pd
-import numpy as np
+import os
+import time
 
-def clean_data_autofit(input_file, output_file):
-    print(f"--> Sedang memproses file: {input_file}...")
-    
+print("--> PROSES 1: PEMBERSIHAN DATA (CLEANING)")
+
+file_path = 'ExportFile.xls'
+
+if not os.path.exists(file_path):
+    print(f"--> File '{file_path}' tidak ditemukan. Pastikan file ada.")
+    exit()
+
+def load_dataset(path):
     try:
-        df = pd.read_excel(input_file, header=None)
-    except Exception as e:
-        print(f"--> Error membaca file: {e}")
-        return
-        
-    target_headers = [
-        "No. Faktur", "Tgl Faktur", "Kode", "Nama Pelanggan", 
-        "Negara Pelanggan", "Alamat 1 Pelanggan", "Kota Pelanggan", 
-        "Jatuh Tempo", "Nilai Faktur", "Sisa Piutang", "Umur JT", 
-        "Telepon Pelanggan", "Sales", "Area"
-    ]
-    
-    header_map = {}
-    start_row = 0
-    
-    for i in range(min(150, len(df))):
-        for j in range(len(df.columns)):
-            val = str(df.iat[i, j]).strip()
-            if val in target_headers and val not in header_map:
-                header_map[val] = j
-                if val == "No. Faktur":
-                    start_row = i
-                    
-    if "No. Faktur" not in header_map:
-        print("--> Error: Kolom No. Faktur tidak ditemukan.")
-        return
+        return pd.read_excel(path, header=3)
+    except:
+        return None
 
-    col_faktur = header_map["No. Faktur"]
-    df_data = df.iloc[start_row + 1:].copy()
-    
-    df_data[col_faktur] = df_data[col_faktur].astype(str).str.strip()
-    kondisi_kosong_faktur = df_data[col_faktur].str.lower().isin(['nan', 'none', ''])
-    df_data.loc[kondisi_kosong_faktur, col_faktur] = np.nan
-    
-    df_clean = df_data.dropna(subset=[col_faktur]).copy()
-    
-    header_labels = ["No. Faktur", "Faktur", "No.", "Total", "Halaman", "Page", "Tanggal"]
-    df_clean = df_clean[~df_clean[col_faktur].astype(str).str.contains('|'.join(header_labels), case=False, na=False)]
-    
-    if "Kode" in header_map:
-        col_kode = header_map["Kode"]
-        df_clean[col_kode] = df_clean[col_kode].astype(str).str.strip()
-        kondisi_kosong_kode = df_clean[col_kode].str.lower().isin(['nan', 'none', ''])
-        df_clean.loc[kondisi_kosong_kode, col_kode] = np.nan
-        df_clean = df_clean.dropna(subset=[col_kode]).copy()
-        
-    final_cols = []
-    for h in target_headers:
-        if h in header_map:
-            df_clean[h] = df_clean[header_map[h]]
-            final_cols.append(h)
-            
-    df_final = df_clean[final_cols].copy()
-    
-    def parse_to_float(val):
-        if pd.isna(val) or str(val).strip() == "":
-            return np.nan
-        if isinstance(val, (int, float)):
-            return float(val)
-        s = str(val).strip()
-        
-        if '.' in s and ',' in s:
-            if s.rfind(',') > s.rfind('.'):
-                s = s.replace('.', '').replace(',', '.')
-            else:
-                s = s.replace(',', '')
-        elif ',' in s:
-            if len(s) - s.rfind(',') <= 3:
-                s = s.replace(',', '.')
-            else:
-                s = s.replace(',', '')
-        elif '.' in s:
-            if s.count('.') > 1 or (len(s) - s.rfind('.') == 4):
-                s = s.replace('.', '')
-        try:
-            return float(s)
-        except:
-            return np.nan
+df = load_dataset(file_path)
 
-    cols_to_clean = ['Nilai Faktur', 'Sisa Piutang']
-    for col in cols_to_clean:
-        if col in df_final.columns:
-            df_final[col] = df_final[col].apply(parse_to_float)
+if df is None:
+    print("--> Gagal membaca file ExportFile.xls.")
+    exit()
 
-    df_final.reset_index(drop=True, inplace=True)
-    
+target_indices = [2, 3, 5, 9, 11, 14, 16, 18, 20, 22]
+df_clean = df.iloc[:, target_indices].copy()
+
+new_columns = [
+    'Kode Pelanggan', 
+    'No. Faktur',     
+    'Tgl Faktur',     
+    'Jatuh Tempo',    
+    'Nilai Faktur',   
+    'Sisa Piutang',   
+    'Umur JT',        
+    'Nama Pelanggan', 
+    'Nama Penjual',   
+    'Nama Kontak'    
+]
+df_clean.columns = new_columns
+
+df_clean['Kode Pelanggan'] = df_clean['Kode Pelanggan'].ffill()
+df_clean = df_clean.dropna(subset=['No. Faktur'])
+
+def format_clean(val):
+    if pd.isna(val):
+        return ""
+    s = str(val)
+    if s.endswith('.0'):
+        return s[:-2]
+    if s.endswith(',00'):
+        return s[:-3]
+    return s
+
+cols_to_clean = ['Kode Pelanggan', 'Nilai Faktur', 'Sisa Piutang']
+for col in cols_to_clean:
+    df_clean[col] = df_clean[col].apply(format_clean)
+
+indo_months_in = {
+    'Jan': 'Jan', 'Feb': 'Feb', 'Mar': 'Mar', 'Apr': 'Apr', 'Mei': 'May', 'Jun': 'Jun',
+    'Jul': 'Jul', 'Agu': 'Aug', 'Sep': 'Sep', 'Okt': 'Oct', 'Nop': 'Nov', 'Des': 'Dec'
+}
+
+def clean_and_format_date(x):
+    if pd.isna(x) or str(x).strip() == '':
+        return None
+    date_str = str(x)
+    for indo, eng in indo_months_in.items():
+        if indo in date_str:
+            date_str = date_str.replace(indo, eng)
+            break
     try:
-        with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
-            df_final.to_excel(writer, index=False, sheet_name='Data Bersih')
-            workbook = writer.book
-            worksheet = writer.sheets['Data Bersih']
-            
-            format_angka = workbook.add_format({'num_format': '#,##0.00'})
-            
-            for i, col in enumerate(df_final.columns):
-                panjang_maksimal = df_final[col].apply(lambda x: len(str(x))).max() if not df_final.empty else 0
-                max_len = max(panjang_maksimal, len(col)) + 2
-                
-                if col in cols_to_clean:
-                    worksheet.set_column(i, i, max_len, format_angka)
-                else:
-                    worksheet.set_column(i, i, max_len)
-                    
-        print(f"--> SUKSES! File tersimpan rapi di: {output_file}")
-        
-    except Exception as e:
-        print(f"--> Error saat menyimpan file: {e}")
+        return pd.to_datetime(date_str, dayfirst=True, errors='coerce')
+    except:
+        return None
 
-    return df_final
+df_clean['Tgl Faktur'] = df_clean['Tgl Faktur'].apply(clean_and_format_date)
+df_clean['Jatuh Tempo'] = df_clean['Jatuh Tempo'].apply(clean_and_format_date)
 
-input_filename = 'ExportFile.xls' 
-output_filename = 'ExportFile_clean_temp.xlsx'
+if 'Tgl Faktur' in df_clean.columns:
+    idx_tgl = df_clean.columns.get_loc('Tgl Faktur')
+    df_clean.insert(idx_tgl + 1, 'SS', '')
 
-if __name__ == "__main__":
-    clean_data_autofit(input_filename, output_filename)
+if 'Jatuh Tempo' in df_clean.columns:
+    idx_jt = df_clean.columns.get_loc('Jatuh Tempo')
+    df_clean.insert(idx_jt + 1, 'SS', '', allow_duplicates=True)
+
+df_clean.reset_index(drop=True, inplace=True)
+
+output_filename = "ARClean_temp.xlsx"
+
+print("--> PROSES 2: MENYIMPAN DATA KE ARClean_temp.xlsx")
+try:
+    df_clean.to_excel(output_filename, index=False)
+    print(f"--> Data bersih siap ({len(df_clean)} baris) dan disimpan di {output_filename}.")
+except Exception as e:
+    print(f"--> TERJADI ERROR SAAT MENYIMPAN: {e}")
+
+print("--> PROSES 3: MENGHAPUS FILE ASLI")
+time.sleep(1)
+try:
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        print(f"--> Berhasil menghapus: {file_path}")
+except Exception as e:
+    print(f"--> Gagal menghapus {file_path}: {e}")
+
+print("--> SEMUA PROSES SELESAI!")
