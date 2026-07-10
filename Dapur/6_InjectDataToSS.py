@@ -43,8 +43,21 @@ def format_excel_date(date_val):
         return date_val.strftime('%d %b %Y')
     return str(date_val)
 
+def read_excel_auto_header(file_path, sheet_name, target_column):
+    df_raw = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
+    target_clean = str(target_column).strip().upper()
+    
+    for idx, row in df_raw.iterrows():
+        row_cleaned = [str(val).strip().upper() for val in row.dropna()]
+        if target_clean in row_cleaned:
+            df_clean = df_raw.iloc[idx + 1:].copy()
+            df_clean.columns = df_raw.iloc[idx].astype(str).str.strip()
+            return df_clean.reset_index(drop=True)
+            
+    raise KeyError(f"Kolom target '{target_column}' tidak ditemukan di baris manapun pada file '{file_path}' (Sheet: {sheet_name})")
+
 def run_ar_process():
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Memulai sinkronisasi data AR...")
+    print(f"--> [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Memulai sinkronisasi data AR...")
     
     config = load_config()
     
@@ -84,13 +97,17 @@ def run_ar_process():
     flag_age = config.get('AR', 'ar_data_age', fallback='Ya')
 
     if not os.path.exists('ARClean_temp.xlsx') or not os.path.exists('Owing_temp.xlsx') or not os.path.exists('Avg_temp.xlsx'):
-        print("Kesalahan: Pastikan ARClean_temp.xlsx, Owing_temp.xlsx, dan Avg_temp.xlsx ada di folder yang sama!")
+        print("--> Kesalahan: Pastikan ARClean_temp.xlsx, Owing_temp.xlsx, dan Avg_temp.xlsx ada di folder yang sama!")
         return
 
-    df_ar_clean = pd.read_excel('ARClean_temp.xlsx')
-    df_owing = pd.read_excel('Owing_temp.xlsx', sheet_name=ow_sheet_name)
-    df_avg = pd.read_excel('Avg_temp.xlsx', sheet_name=avg_sheet_name)
-    
+    try:
+        df_ar_clean = read_excel_auto_header('ARClean_temp.xlsx', sheet_name=0, target_column='Kode Pelanggan')
+        df_owing = read_excel_auto_header('Owing_temp.xlsx', sheet_name=ow_sheet_name, target_column=ow_col_name)
+        df_avg = read_excel_auto_header('Avg_temp.xlsx', sheet_name=avg_sheet_name, target_column=avg_key_col)
+    except KeyError as ke:
+        print(f"--> Terjadi kegagalan deteksi struktur kolom tabel Excel: {ke}")
+        return
+
     df_ar_clean['Clean_Kode'] = df_ar_clean['Kode Pelanggan'].apply(standardize_code)
     df_avg['Clean_Kode'] = df_avg[avg_key_col].apply(standardize_code)
     
@@ -109,7 +126,7 @@ def run_ar_process():
     
     all_rows = wks.get_all_values()
     if not all_rows:
-        print("Sheet kosong.")
+        print("--> Sheet kosong.")
         return
         
     header = all_rows[0]
@@ -118,7 +135,7 @@ def run_ar_process():
         key_col_idx = header.index(ar_key_col_name)
         target_col_idx = header.index(ar_target_col_name)
     except ValueError as e:
-        print(f"Kesalahan nama kolom di Google Sheets tidak ditemukan: {e}")
+        print(f"--> Kesalahan nama kolom di Google Sheets tidak ditemukan: {e}")
         return
         
     prod_col_idx = header.index(ar_prod_key_col_name) if ar_prod_key_col_name in header else None
@@ -130,6 +147,9 @@ def run_ar_process():
         if key_col_idx >= len(row):
             continue
             
+        if target_col_idx < len(row) and row[target_col_idx].strip() != "":
+            continue
+
         raw_key = row[key_col_idx]
         std_key = standardize_code(raw_key)
         
@@ -168,7 +188,8 @@ def run_ar_process():
             if flag_avg_plaf == 'Ya': plafon = format_idr(idx_row.get(config.get('AVG', 'avg_excel_plaf'), '#N/A'))
             if flag_avg_pay == 'Ya': avg_pay = format_idr(idx_row.get(config.get('AVG', 'avg_excel_pay'), '#N/A'))
             if flag_avg_his == 'Ya': 
-                his_val = idx_row.get(config.get('AVG', 'avg_excel_history'), '#N/A')
+                his_key = config.get('AVG', 'avg_excel_his', fallback=config.get('AVG', 'avg_excel_history', fallback='AVG HISTORY BAYAR (HARI)'))
+                his_val = idx_row.get(his_key, '#N/A')
                 avg_his = f"{his_val} HR" if his_val != '#N/A' else '#N/A'
 
         note_lines = []
@@ -258,9 +279,9 @@ def run_ar_process():
     if requests:
         body = {"requests": requests}
         ss.batch_update(body)
-        print(f"Berhasil memperbarui {len(requests)} baris data di Google Sheet!")
+        print(f"--> Berhasil memperbarui {len(requests)} baris data kosong di Google Sheet!")
     else:
-        print("Tidak ada data valid yang perlu diperbarui.")
+        print("--> Tidak ada data target kosong baru yang perlu diperbarui.")
 
 if __name__ == "__main__":
     while True:
@@ -273,7 +294,7 @@ if __name__ == "__main__":
         try:
             run_ar_process()
         except Exception as err:
-            print(f"Terjadi error runtime saat proses berjalan: {err}")
+            print(f"--> Terjadi error runtime saat proses berjalan: {err}")
             
-        print(f"Menunggu interval selama {interval_menit} menit berikutnya...\n")
+        print(f"--> Menunggu interval selama {interval_menit} menit berikutnya...\n")
         time.sleep(interval_menit * 60)
