@@ -14,10 +14,13 @@ def load_config():
 
 def standardize_code(code):
     if pd.isna(code):
-        return ""
+        return "" 
+    if isinstance(code, float) and code.is_integer():
+        code = int(code)    
     s = str(code).strip().upper()
     s = re.sub(r'\s*-\s*', '-', s)
-    s = re.sub(r'^(SL|YY)\s+(\d+)', r'\1-\2', s)
+    s = re.sub(r'^(SL|YY|MKS|MGL|PW|PWT|PA|KDI)\s+(\d+)', r'\1-\2', s)
+    s = re.sub(r'(\d+)([A-Z])$', r'\1 \2', s)
     return s
 
 def format_idr(value):
