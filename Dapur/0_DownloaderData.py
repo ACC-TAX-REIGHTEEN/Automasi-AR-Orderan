@@ -32,7 +32,8 @@ def main():
 
     mapping = {
         'OWING': 'Owing_temp.xlsx',
-        'AVG': 'Avg_temp.xlsx'
+        'ARAVG': 'Avg_temp.xlsx',
+        'FBACK': 'FallbackCash_temp.xlsx'
     }
 
     for section, output_name in mapping.items():
