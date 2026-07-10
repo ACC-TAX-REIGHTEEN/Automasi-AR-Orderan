@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import time
 
-print("--> PROSES 1: PEMBERSIHAN DATA (CLEANING)")
+print("--> Proses pembersihan data (cleaning)")
 
 file_path = 'Piutang.xls'
 
@@ -19,7 +19,7 @@ def load_dataset(path):
 df = load_dataset(file_path)
 
 if df is None:
-    print("--> Gagal membaca file ExportFile.xls.")
+    print("--> Gagal membaca file Piutang.xls.")
     exit()
 
 target_indices = [2, 3, 5, 9, 11, 14, 16, 18, 20, 22]
@@ -89,14 +89,14 @@ df_clean.reset_index(drop=True, inplace=True)
 
 output_filename = "ARClean_temp.xlsx"
 
-print("--> PROSES 2: MENYIMPAN DATA KE ARClean_temp.xlsx")
+print("--> Proses menyimpan data ke ARClean_temp.xlsx")
 try:
     df_clean.to_excel(output_filename, index=False)
     print(f"--> Data bersih siap ({len(df_clean)} baris) dan disimpan di {output_filename}.")
 except Exception as e:
-    print(f"--> TERJADI ERROR SAAT MENYIMPAN: {e}")
+    print(f"--> Terjadi error saat menyimpan: {e}")
 
-print("--> PROSES 3: MENGHAPUS FILE ASLI")
+print("--> Menghapus file asli")
 time.sleep(1)
 try:
     if os.path.exists(file_path):
@@ -105,4 +105,4 @@ try:
 except Exception as e:
     print(f"--> Gagal menghapus {file_path}: {e}")
 
-print("--> SEMUA PROSES SELESAI!")
+print("--> Semua proses selesai!")

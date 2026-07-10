@@ -11,14 +11,16 @@ if os.path.exists(config_file):
         lines = [line.strip() for line in f.readlines()]
     if '[GIRO]' in lines:
         idx = lines.index('[GIRO]')
-        if idx + 1 < len(lines) and lines[idx + 1] == 'YA':
-            run_giro = True
+        if idx + 1 < len(lines):
+            line_val = lines[idx + 1].replace(' ', '').lower()
+            if line_val == 'giro_stats=ya':
+                run_giro = True
 
 if not run_giro:
     print("--> Proses GIRO di-skip berdasarkan config.conf.")
     exit()
 
-print("--> PROSES 4: PEMBARUAN KOLOM TANGGAL JT")
+print("--> Proses pembaruan kolom tanggal JT")
 
 giro_file = 'Giro_temp.xlsx'
 target_file = 'ARClean_temp.xlsx'
@@ -118,6 +120,6 @@ df_target['Tanggal JT'] = hasil_kolom_jt
 print(f"--> Menyimpan hasil perubahan ke {target_file}...")
 try:
     df_target.to_excel(target_file, index=False)
-    print("--> PROSES BERHASIL! Kolom 'Tanggal JT' berhasil ditambahkan di paling kanan dan diperbarui.")
+    print("--> Proses berhasil! Kolom 'Tanggal JT' berhasil ditambahkan di paling kanan dan diperbarui.")
 except Exception as e:
-    print(f"--> TERJADI ERROR SAAT MENYIMPAN FILE: {e}")
+    print(f"--> Terjadi error saat menyimpan file: {e}")

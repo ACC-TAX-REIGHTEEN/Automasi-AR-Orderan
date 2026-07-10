@@ -9,8 +9,10 @@ if os.path.exists(config_file):
         lines = [line.strip() for line in f.readlines()]
     if '[GIRO]' in lines:
         idx = lines.index('[GIRO]')
-        if idx + 1 < len(lines) and lines[idx + 1] == 'YA':
-            run_giro = True
+        if idx + 1 < len(lines):
+            line_val = lines[idx + 1].replace(' ', '').lower()
+            if line_val == 'giro_stats=ya':
+                run_giro = True
 
 if not run_giro:
     print("--> Proses GIRO di-skip berdasarkan config.conf.")
