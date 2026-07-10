@@ -19,7 +19,7 @@ def standardize_code(code):
         code = int(code)    
     s = str(code).strip().upper()
     s = re.sub(r'\s*-\s*', '-', s)
-    s = re.sub(r'^(SL|YY|MKS|MGL|PW|PWT|PA|KDI)\s+(\d+)', r'\1-\2', s)
+    s = re.sub(r'^(SL|YY|MKS|MGL|PW|PWT|PA|KDI)\s*(\d+)', r'\1-\2', s)
     s = re.sub(r'(\d+)([A-Z])$', r'\1 \2', s)
     return s
 
