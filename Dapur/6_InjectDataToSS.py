@@ -204,34 +204,41 @@ def run_ar_process():
         header_line_parts.append(product_val)
         note_lines.append("\t".join([p for p in header_line_parts if p]))
         
+        
         if flag_dt_order == 'Ya':
-            note_lines.append(formatted_order_dt)
-        else:
-            note_lines.append("")
-            
+            note_lines.append(f"Tanggal Order: {formatted_order_dt}")
+        
         note_lines.append("")
+        note_lines.append("========================================")
+        note_lines.append("RINGKASAN PERFORMA PIUTANG")
+        note_lines.append("========================================")
 
-        if flag_calc == 'Ya': note_lines.append(f"Piutang\t {formatted_piutang_val} ")
-        if flag_avg_age == 'Ya': note_lines.append(f"Avg Umur Piutang {avg_age}")
-        if flag_avg_val == 'Ya': note_lines.append(f"Avg Nilai Faktur {avg_val}")
-        if flag_avg_inv == 'Ya': note_lines.append(f"Avg Jumlah Faktur {avg_inv}")
-        if flag_inv_val == 'Ya': note_lines.append(f"Inv\t {len(user_ar_rows)} ")
-        if flag_avg_plaf == 'Ya': note_lines.append(f"Plafon\t {plafon} ")
-        if flag_avg_pay == 'Ya': note_lines.append(f"Rata-Rata Bayar\t {avg_pay} ")
-        if flag_avg_his == 'Ya': note_lines.append(f"Rata-Rata History Bayar\t {avg_his.replace(' HR', '')}\tHari")
+        if flag_calc == 'Ya': note_lines.append(f"Piutang\t\t\t :  {formatted_piutang_val} ")
+        if flag_avg_age == 'Ya': note_lines.append(f"Avg Umur Piutang\t\t : {avg_age}")
+        if flag_avg_val == 'Ya': note_lines.append(f"Avg Nilai Faktur\t\t : {avg_val}")
+        if flag_avg_inv == 'Ya': note_lines.append(f"Avg Jumlah Faktur\t\t : {avg_inv}")
+        if flag_inv_val == 'Ya': note_lines.append(f"Total Faktur Aktif (Inv)\t :  {len(user_ar_rows)} ")
+        
+        note_lines.append("") 
+        
+        if flag_avg_plaf == 'Ya': note_lines.append(f"Plafon Kredibilitas\t\t :  {plafon} ")
+        if flag_avg_pay == 'Ya': note_lines.append(f"Rata-Rata Bayar\t\t :  {avg_pay} ")
+        if flag_avg_his == 'Ya': note_lines.append(f"Rata-Rata History Bayar\t : {avg_his.replace(' HR', '')} Hari")
+
+        note_lines.append("")
+        note_lines.append("========================================")
+        note_lines.append("DAFTAR RINCIAN FAKTUR AKTIF")
+        note_lines.append("========================================")
 
         for _, inv_row in user_ar_rows.iterrows():
             inv_part = []
             
             if flag_inv_numb == 'Ya':
                 inv_part.append(str(inv_row.get('No. Faktur', '')))
-            
             if flag_inv_dt == 'Ya':
                 inv_part.append(format_excel_date(inv_row.get('Tgl Faktur')))
-            
             if flag_inv_due == 'Ya':
                 inv_part.append(format_excel_date(inv_row.get('Jatuh Tempo')))
-                
             if flag_inv_ar == 'Ya':
                 inv_part.append(format_idr(inv_row.get('Sisa Piutang', 0)))
                 
@@ -254,8 +261,9 @@ def run_ar_process():
                 tgl_jt_giro = format_excel_date(inv_row['Tanggal JT'])
                 if tgl_jt_giro.strip():
                     line_str += f" (JT {tgl_jt_giro})"
-                    
+            
             note_lines.append(line_str)
+            note_lines.append("") 
 
         final_note_text = "\n".join(note_lines)
         
