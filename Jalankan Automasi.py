@@ -48,9 +48,9 @@ def jalankan_otomatisasi():
             pass
 
     try:
-        shutil.move("Piutang.xls", os.path.join(folder_dapur, "Piutang.xls"))
+        shutil.copy("Piutang.xls", os.path.join(folder_dapur, "Piutang.xls"))
         if os.path.isfile("Giro.xls"):
-            shutil.move("Giro.xls", os.path.join(folder_dapur, "Giro.xls"))
+            shutil.copy("Giro.xls", os.path.join(folder_dapur, "Giro.xls"))
     except Exception:
         print("--> Gagal memindahkan file ke folder Dapur.")
         input("--> Tekan enter untuk keluar.")
