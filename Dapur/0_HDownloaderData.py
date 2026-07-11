@@ -38,8 +38,8 @@ def main():
         return
 
     downloads = {
-        'Owing_temp.xlsx': 'https://github.com/ACC-TAX-REIGHTEEN/.xlsx',
-        'Avg_temp.xlsx': 'https://github.com/ACC-TAX-REIGHTEEN/.xlsx'
+        'Owing_temp.xlsx': 'https://github.com/ACC-TAX-REIGHTEEN/Automasi-AR-Orderan/raw/refs/heads/main/Contoh%20Data/Owing_temp.xlsx',
+        'Avg_temp.xlsx': 'https://github.com/ACC-TAX-REIGHTEEN/Automasi-AR-Orderan/raw/refs/heads/main/Contoh%20Data/Avg_temp.xlsx'
     }
 
     for output_name, url in downloads.items():

@@ -12,6 +12,11 @@ def load_config():
     config.read('config.conf')
     return config
 
+def safe_str(val, fallback='#N/A'):
+    if pd.isna(val) or str(val).strip().lower() == 'nan' or str(val).strip() == '':
+        return fallback
+    return str(val).strip()
+
 def standardize_code(code):
     if pd.isna(code):
         return "" 
@@ -19,11 +24,13 @@ def standardize_code(code):
         code = int(code)    
     s = str(code).strip().upper()
     s = re.sub(r'\s*-\s*', '-', s)
-    s = re.sub(r'^(SL|YY|MKS|MGL|PW|PWT|PA|KDI)\s+(\d+)', r'\1-\2', s)
+    s = re.sub(r'^(SL|YY|MKS|MGL|PW|PWT|PLU|SG|SMG|TGL|PA|KDI)\s*(\d+)', r'\1-\2', s)
     s = re.sub(r'(\d+)([A-Z])$', r'\1 \2', s)
     return s
 
 def format_idr(value):
+    if pd.isna(value) or str(value).strip().lower() == 'nan' or str(value).strip() == '':
+        return "0"
     try:
         val_float = float(value)
         return f"{val_float:,.0f}".replace(",", ".")
@@ -64,40 +71,41 @@ def run_ar_process():
     
     config = load_config()
     
-    ow_sheet_name = config.get('OWCOLKEY', 'ow_excel_sheet', fallback='SOLO')
-    ow_col_name = config.get('OWCOLKEY', 'ow_excel_col', fallback='Nomor Invoice')
+    ow_sheet_name = config.get('OWCOLKEY', 'ow_excel_sheet', fallback='SOLO').strip()
+    ow_col_name = config.get('OWCOLKEY', 'ow_excel_col', fallback='Nomor Invoice').strip()
     
-    avg_sheet_name = config.get('AVG', 'avg_excel_sheet', fallback='Solo')
-    avg_key_col = config.get('AVG', 'avg_excel_key', fallback='NO. PELANGGAN')
+    avg_sheet_name = config.get('AVG', 'avg_excel_sheet', fallback='Solo').strip()
+    avg_key_col = config.get('AVG', 'avg_excel_key', fallback='NO. PELANGGAN').strip()
     
-    ar_url = config.get('AR', 'ar_url')
-    ar_sheet_name = config.get('AR', 'ar_sheet')
-    ar_key_col_name = config.get('AR', 'ar_key_col')
+    ar_url = config.get('AR', 'ar_url').strip()
+    ar_sheet_name = config.get('AR', 'ar_sheet').strip()
+    ar_key_col_name = config.get('AR', 'ar_key_col').strip()
     ar_prod_key_col_name = config.get('AR', 'ar_prod_key_col').strip()
-    ar_target_col_name = config.get('AR', 'ar_target_col')
+    ar_target_col_name = config.get('AR', 'ar_target_col').strip()
     
-    flag_fraud = config.get('AR', 'ar_data_fraud', fallback='No')
-    flag_codecus = config.get('AR', 'ar_data_codecus', fallback='Ya')
-    flag_namecus = config.get('AR', 'ar_data_namecus', fallback='Ya')
-    fallback_prod = config.get('AR', 'ar_data_prod', fallback='PCMO')
-    flag_dt_order = config.get('AR', 'ar_data_dt_order', fallback='Ya')
-    flag_calc = config.get('AR', 'ar_data_calc', fallback='Ya')
+    flag_fraud = config.get('AR', 'ar_data_fraud', fallback='No').strip()
+    flag_codecus = config.get('AR', 'ar_data_codecus', fallback='Ya').strip()
+    flag_namecus = config.get('AR', 'ar_data_namecus', fallback='Ya').strip()
+    fallback_prod = config.get('AR', 'ar_data_prod', fallback='PCMO').strip()
+    flag_dt_order = config.get('AR', 'ar_data_dt_order', fallback='Ya').strip()
+    flag_calc = config.get('AR', 'ar_data_calc', fallback='Ya').strip()
     
-    flag_avg_age = config.get('AR', 'ar_data_avg_age', fallback='No')
-    flag_avg_val = config.get('AR', 'ar_data_avg_val', fallback='No')
-    flag_avg_inv = config.get('AR', 'ar_data_avg_inv', fallback='No')
-    flag_avg_plaf = config.get('AR', 'ar_data_avg_plaf', fallback='Ya')
-    flag_avg_pay = config.get('AR', 'ar_data_avg_pay', fallback='Ya')
-    flag_avg_his = config.get('AR', 'ar_data_avg_his', fallback='Ya')
+    flag_avg_age = config.get('AR', 'ar_data_avg_age', fallback='No').strip()
+    flag_avg_val = config.get('AR', 'ar_data_avg_val', fallback='No').strip()
+    flag_avg_inv = config.get('AR', 'ar_data_avg_inv', fallback='No').strip()
+    flag_avg_plaf = config.get('AR', 'ar_data_avg_plaf', fallback='Ya').strip()
+    flag_avg_pay = config.get('AR', 'ar_data_avg_pay', fallback='Ya').strip()
+    flag_avg_his = config.get('AR', 'ar_data_avg_his', fallback='Ya').strip()
+    flag_avg_tier = config.get('AR', 'ar_data_avg_tier', fallback='No').strip()
     
-    flag_inv_numb = config.get('AR', 'ar_data_inv_numb', fallback='Ya')
-    flag_inv_dt = config.get('AR', 'ar_data_inv_dt', fallback='No')
-    flag_inv_due = config.get('AR', 'ar_data_inv_due', fallback='No')
-    flag_inv_val = config.get('AR', 'ar_data_inv_val', fallback='Ya')
-    flag_inv_ar = config.get('AR', 'ar_data_inv_ar', fallback='Ya')
-    flag_owing = config.get('AR', 'ar_data_owing', fallback='Ya')
-    flag_giro = config.get('AR', 'ar_data_giro', fallback='Ya')
-    flag_age = config.get('AR', 'ar_data_age', fallback='Ya')
+    flag_inv_numb = config.get('AR', 'ar_data_inv_numb', fallback='Ya').strip()
+    flag_inv_dt = config.get('AR', 'ar_data_inv_dt', fallback='No').strip()
+    flag_inv_due = config.get('AR', 'ar_data_inv_due', fallback='No').strip()
+    flag_inv_val = config.get('AR', 'ar_data_inv_val', fallback='Ya').strip()
+    flag_inv_ar = config.get('AR', 'ar_data_inv_ar', fallback='Ya').strip()
+    flag_owing = config.get('AR', 'ar_data_owing', fallback='Ya').strip()
+    flag_giro = config.get('AR', 'ar_data_giro', fallback='Ya').strip()
+    flag_age = config.get('AR', 'ar_data_age', fallback='Ya').strip()
 
     if not os.path.exists('ARClean_temp.xlsx') or not os.path.exists('Owing_temp.xlsx') or not os.path.exists('Avg_temp.xlsx'):
         print("--> Kesalahan: Pastikan ARClean_temp.xlsx, Owing_temp.xlsx, dan Avg_temp.xlsx ada di folder yang sama!")
@@ -154,9 +162,9 @@ def run_ar_process():
             continue
 
         raw_key = row[key_col_idx]
-        std_key = standardize_code(raw_key)
+        std_keys = [standardize_code(k.strip()) for k in str(raw_key).split('&') if k.strip()]
         
-        if not std_key:
+        if not std_keys:
             continue
 
         raw_order_dt = row[0] if len(row) > 0 else ""
@@ -166,7 +174,14 @@ def run_ar_process():
         if prod_col_idx is not None and prod_col_idx < len(row) and row[prod_col_idx].strip():
             product_val = row[prod_col_idx].strip()
 
-        user_ar_rows = df_ar_clean[df_ar_clean['Clean_Kode'] == std_key]
+        user_ar_rows = df_ar_clean[df_ar_clean['Clean_Kode'].isin(std_keys)]
+        
+        if not user_ar_rows.empty and 'No. Faktur' in user_ar_rows.columns:
+            user_ar_rows = user_ar_rows[
+                user_ar_rows['No. Faktur'].notna() & 
+                (user_ar_rows['No. Faktur'].astype(str).str.strip().str.lower() != 'nan') &
+                (user_ar_rows['No. Faktur'].astype(str).str.strip() != '')
+            ]
         
         total_sisa_piutang = 0
         if not user_ar_rows.empty and 'Sisa Piutang' in user_ar_rows.columns:
@@ -174,7 +189,7 @@ def run_ar_process():
             
         formatted_piutang_val = format_idr(total_sisa_piutang)
 
-        user_avg_row = df_avg[df_avg['Clean_Kode'] == std_key]
+        user_avg_row = df_avg[df_avg['Clean_Kode'].isin(std_keys)]
         
         avg_age = "#N/A"
         avg_val = "#N/A"
@@ -182,64 +197,91 @@ def run_ar_process():
         plafon = "#N/A"
         avg_pay = "#N/A"
         avg_his = "#N/A"
+        avg_tier = "#N/A"
 
         if not user_avg_row.empty:
             idx_row = user_avg_row.iloc[0]
-            if flag_avg_age == 'Ya': avg_age = str(idx_row.get(config.get('AVG', 'avg_excel_age'), '#N/A'))
-            if flag_avg_val == 'Ya': avg_val = format_idr(idx_row.get(config.get('AVG', 'avg_excel_val'), '#N/A'))
-            if flag_avg_inv == 'Ya': avg_inv = str(idx_row.get(config.get('AVG', 'avg_excel_inv'), '#N/A'))
-            if flag_avg_plaf == 'Ya': plafon = format_idr(idx_row.get(config.get('AVG', 'avg_excel_plaf'), '#N/A'))
-            if flag_avg_pay == 'Ya': avg_pay = format_idr(idx_row.get(config.get('AVG', 'avg_excel_pay'), '#N/A'))
+            if flag_avg_age == 'Ya': avg_age = safe_str(idx_row.get(config.get('AVG', 'avg_excel_age', fallback='').strip(), '#N/A'))
+            if flag_avg_val == 'Ya': avg_val = format_idr(idx_row.get(config.get('AVG', 'avg_excel_val', fallback='').strip(), '#N/A'))
+            if flag_avg_inv == 'Ya': avg_inv = safe_str(idx_row.get(config.get('AVG', 'avg_excel_inv', fallback='').strip(), '#N/A'))
+            if flag_avg_plaf == 'Ya': plafon = format_idr(idx_row.get(config.get('AVG', 'avg_excel_plaf', fallback='').strip(), '#N/A'))
+            if flag_avg_pay == 'Ya': avg_pay = format_idr(idx_row.get(config.get('AVG', 'avg_excel_pay', fallback='').strip(), '#N/A'))
             if flag_avg_his == 'Ya': 
-                his_key = config.get('AVG', 'avg_excel_his', fallback=config.get('AVG', 'avg_excel_history', fallback='AVG HISTORY BAYAR (HARI)'))
-                his_val = idx_row.get(his_key, '#N/A')
+                his_key = config.get('AVG', 'avg_excel_his', fallback=config.get('AVG', 'avg_excel_history', fallback='AVG HISTORY BAYAR (HARI)')).strip()
+                his_val = safe_str(idx_row.get(his_key, '#N/A'))
                 avg_his = f"{his_val} HR" if his_val != '#N/A' else '#N/A'
+            if flag_avg_tier == 'Ya': avg_tier = safe_str(idx_row.get(config.get('AVG', 'avg_excel_tier', fallback='').strip(), '#N/A'))
 
         note_lines = []
-        
         header_line_parts = []
-        if flag_codecus == 'Ya': header_line_parts.append(std_key)
+        
+        if flag_codecus == 'Ya': 
+            header_line_parts.append(", ".join(std_keys))
+            
         if flag_namecus == 'Ya' and not user_ar_rows.empty:
             header_line_parts.append(str(user_ar_rows.iloc[0].get('Nama Pelanggan', '')))
+        elif flag_namecus == 'Ya' and user_ar_rows.empty:
+            backup_rows = df_ar_clean[df_ar_clean['Clean_Kode'].isin(std_keys)]
+            if not backup_rows.empty:
+                header_line_parts.append(str(backup_rows.iloc[0].get('Nama Pelanggan', '')))
+            
         header_line_parts.append(product_val)
         note_lines.append("\t".join([p for p in header_line_parts if p]))
         
         if flag_dt_order == 'Ya':
-            note_lines.append(formatted_order_dt)
-        else:
-            note_lines.append("")
-            
+            note_lines.append(f"Tanggal Order: {formatted_order_dt}")
+        
         note_lines.append("")
+        note_lines.append("========================================")
+        note_lines.append("RINGKASAN PERFORMA PIUTANG")
+        note_lines.append("========================================")
 
-        if flag_calc == 'Ya': note_lines.append(f"Piutang\t {formatted_piutang_val} ")
-        if flag_avg_age == 'Ya': note_lines.append(f"Avg Umur Piutang {avg_age}")
-        if flag_avg_val == 'Ya': note_lines.append(f"Avg Nilai Faktur {avg_val}")
-        if flag_avg_inv == 'Ya': note_lines.append(f"Avg Jumlah Faktur {avg_inv}")
-        if flag_inv_val == 'Ya': note_lines.append(f"Inv\t {len(user_ar_rows)} ")
-        if flag_avg_plaf == 'Ya': note_lines.append(f"Plafon\t {plafon} ")
-        if flag_avg_pay == 'Ya': note_lines.append(f"Rata-Rata Bayar\t {avg_pay} ")
-        if flag_avg_his == 'Ya': note_lines.append(f"Rata-Rata History Bayar\t {avg_his.replace(' HR', '')}\tHari")
+        if flag_calc == 'Ya': note_lines.append(f"Piutang\t\t\t\t\t :  {formatted_piutang_val} ")
+        if flag_avg_tier == 'Ya': note_lines.append(f"Tiering\t\t\t\t\t : {avg_tier}")
+        
+        if flag_avg_age == 'Ya': note_lines.append(f"Avg Umur Piutang\t\t : {avg_age}")
+        if flag_avg_val == 'Ya': note_lines.append(f"Avg Nilai Faktur\t\t : {avg_val}")
+        if flag_avg_inv == 'Ya': note_lines.append(f"Avg Jumlah Faktur\t\t : {avg_inv}")
+        if flag_inv_val == 'Ya': note_lines.append(f"Total Faktur Aktif (Inv) :  {len(user_ar_rows)} ")
+        
+        note_lines.append("") 
+        
+        if flag_avg_plaf == 'Ya': note_lines.append(f"Plafon Kredibilitas\t\t :  {plafon} ")
+        if flag_avg_pay == 'Ya': note_lines.append(f"Rata-Rata Bayar\t\t\t :  {avg_pay} ")
+        if flag_avg_his == 'Ya': note_lines.append(f"Rata-Rata History Bayar\t : {avg_his.replace(' HR', '')} Hari")
+
+        note_lines.append("")
+        note_lines.append("========================================")
+        note_lines.append("DAFTAR RINCIAN FAKTUR AKTIF")
+        note_lines.append("========================================")
 
         for _, inv_row in user_ar_rows.iterrows():
             inv_part = []
             
             if flag_inv_numb == 'Ya':
                 inv_part.append(str(inv_row.get('No. Faktur', '')))
-            
             if flag_inv_dt == 'Ya':
                 inv_part.append(format_excel_date(inv_row.get('Tgl Faktur')))
-            
             if flag_inv_due == 'Ya':
                 inv_part.append(format_excel_date(inv_row.get('Jatuh Tempo')))
-                
             if flag_inv_ar == 'Ya':
                 inv_part.append(format_idr(inv_row.get('Sisa Piutang', 0)))
                 
             if flag_age == 'Ya' and pd.notna(inv_row.get('Tgl Faktur')):
                 try:
-                    tgl_faktur_dt = pd.to_datetime(inv_row['Tgl Faktur']).date()
-                    selisih_hari = (current_date - tgl_faktur_dt).days
-                    inv_part.append(f"{selisih_hari}\tHR")
+                    tgl_val = str(inv_row['Tgl Faktur']).lower()
+                    indo_months = {'mei': 'may', 'agu': 'aug', 'okt': 'oct', 'des': 'dec', 'peb': 'feb'}
+                    for indo, eng in indo_months.items():
+                        if indo in tgl_val:
+                            tgl_val = tgl_val.replace(indo, eng)
+                            break
+                    
+                    tgl_faktur_dt = pd.to_datetime(tgl_val, errors='coerce')
+                    if pd.notna(tgl_faktur_dt):
+                        selisih_hari = (current_date - tgl_faktur_dt.date()).days
+                        inv_part.append(f"{selisih_hari}\tHR")
+                    else:
+                        inv_part.append("-\tHR")
                 except Exception:
                     inv_part.append("-\tHR")
 
@@ -254,7 +296,7 @@ def run_ar_process():
                 tgl_jt_giro = format_excel_date(inv_row['Tanggal JT'])
                 if tgl_jt_giro.strip():
                     line_str += f" (JT {tgl_jt_giro})"
-                    
+            
             note_lines.append(line_str)
 
         final_note_text = "\n".join(note_lines)

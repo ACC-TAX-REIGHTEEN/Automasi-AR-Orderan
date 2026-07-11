@@ -5,9 +5,26 @@ import subprocess
 import sys
 
 def jalankan_otomatisasi():
+    if not os.path.isfile("Piutang.xls"):
+        print("--> File Piutang.xls tidak ditemukan. Proses digagalkan.")
+        input("--> Tekan enter untuk keluar.")
+        return
+
     folder_dapur = "Dapur"
-    file_syarat = ["__init__.py", "1_CleanerAcc.py", "2_FilterAR.py", "3_CalculateAR.py", "4_HelperCleaningData.py", "5_InjectDataToSS.py", "credentials.json", "piutang.conf"]
-    
+    file_syarat = [
+        "0_DownloaderData.py",
+        "0_HDownloaderData.py",
+        "1_CleanerAccAR.py",
+        "2_CleanerAccGiro.py",
+        "3_AddGiroToSheet.py",
+        "4_PatchFallbackCash.py",
+        "5_AdjDateFormat.py",
+        "6_InjectDataToSS.py",
+        "config.conf",
+        "credentials.json",
+        "__init__.py"
+    ]
+
     if not os.path.exists(folder_dapur) or not os.path.isdir(folder_dapur):
         print("--> Folder Dapur tidak ditemukan.")
         input("--> Tekan enter untuk keluar.")
@@ -20,10 +37,9 @@ def jalankan_otomatisasi():
             input("--> Tekan enter untuk keluar.")
             return
 
-    file_temp = glob.glob(os.path.join(folder_dapur, "*temp.xlsx"))
-    file_export = glob.glob(os.path.join(folder_dapur, "ExportFile.xls"))
-
-    semua_file_lama = file_temp + file_export
+    file_xls = glob.glob(os.path.join(folder_dapur, "*.xls"))
+    file_xlsx = glob.glob(os.path.join(folder_dapur, "*.xlsx"))
+    semua_file_lama = file_xls + file_xlsx
 
     for file in semua_file_lama:
         try:
@@ -31,50 +47,36 @@ def jalankan_otomatisasi():
         except Exception:
             pass
 
-    file_sumber = ["ExportFile.xls"]
-    ada_file_dipindah = False
-    for file in file_sumber:
-        if os.path.isfile(file):
-            shutil.copy2(file, os.path.join(folder_dapur, file))
-            ada_file_dipindah = True
-
-    if not ada_file_dipindah:
-        print("--> File ExportFile.xls tidak ditemukan untuk diproses.")
+    try:
+        shutil.copy("Piutang.xls", os.path.join(folder_dapur, "Piutang.xls"))
+        if os.path.isfile("Giro.xls"):
+            shutil.copy("Giro.xls", os.path.join(folder_dapur, "Giro.xls"))
+    except Exception:
+        print("--> Gagal memindahkan file ke folder Dapur.")
         input("--> Tekan enter untuk keluar.")
         return
 
-    print("--> Memulai eksekusi pembersihan data")
-    subprocess.run([sys.executable, "1_CleanerAcc.py"], cwd=folder_dapur)
+    scripts = [
+        "0_DownloaderData.py",
+        "0_HDownloaderData.py",
+        "1_CleanerAccAR.py",
+        "2_CleanerAccGiro.py",
+        "3_AddGiroToSheet.py",
+        "4_PatchFallbackCash.py",
+        "5_AdjDateFormat.py"
+    ]
 
-    print("--> Memulai eksekusi filter data sementara")
-    subprocess.run([sys.executable, "2_FilterAR.py"], cwd=folder_dapur)
-    
-    print("--> Memulai eksekusi menyalin dan menyusun data pada template")
-    subprocess.run([sys.executable, "3_CalculateAR.py"], cwd=folder_dapur)
+    try:
+        for script in scripts:
+            print(f"--> Memulai eksekusi {script}")
+            subprocess.run([sys.executable, script], cwd=folder_dapur)
 
-    file_laporan = glob.glob(os.path.join(folder_dapur, "*AR.xlsx"))
-    for laporan in file_laporan:
-        nama_file = os.path.basename(laporan)
-        shutil.copy2(laporan, nama_file)
-        
-    print("--> Memulai persiapan data untuk di susun ke Spreadsheets")
-    subprocess.run([sys.executable, "4_HelperCleaningData.py"], cwd=folder_dapur)
-    
-    print("--> Memulai unggah data ke Spreadsheets")
-    subprocess.run([sys.executable, "5_InjectDataToSS.py"], cwd=folder_dapur)
+        print("--> Memulai eksekusi 6_InjectDataToSS.py")
+        print("--> Tekan Ctrl+C untuk menghentikan loop sinkronisasi.")
+        subprocess.run([sys.executable, "6_InjectDataToSS.py"], cwd=folder_dapur)
+    except KeyboardInterrupt:
+        print("\n--> Looping dihentikan oleh pengguna.")
 
-    file_temp = glob.glob(os.path.join(folder_dapur, "*temp.xlsx"))
-    file_export = glob.glob(os.path.join(folder_dapur, "ExportFile.xls"))
-    file_print = glob.glob(os.path.join(folder_dapur, "Print_AR.xlsx"))
-
-    semua_file_dihapus = file_temp + file_export + file_print
-
-    for file in semua_file_dihapus:
-        try:
-            os.remove(file)
-        except Exception:
-            pass
-            
     print("--> Semua proses telah selesai dijalankan.")
     input("--> Tekan enter untuk keluar.")
 
