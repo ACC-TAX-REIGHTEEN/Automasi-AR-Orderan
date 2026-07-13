@@ -581,7 +581,7 @@ Ubah nilai `ar_time_interval` di seksi `[AR]` config.conf. Nilai dalam menit. In
 
 ## 📌 Catatan Penting
 
-- **`Piutang.xls` disalin, bukan dipindahkan** — Orkestrator menggunakan `shutil.copy()`, sehingga file asli di folder utama tetap aman setelah proses selesai. Berbeda dengan proyek ARVIEWER yang menggunakan `shutil.move()`.
+- **`Piutang.xls` disalin, bukan dipindahkan** — Orkestrator menggunakan `shutil.copy()`, sehingga file asli di folder utama tetap aman setelah proses selesai.
 - **`credentials.json` wajib dijaga kerahasiaannya** — Jangan pernah commit file ini ke repository publik. Tambahkan `Dapur/credentials.json` ke `.gitignore`.
 - **Skrip 6 adalah loop tak terbatas** — Hentikan dengan `Ctrl+C`. Terminal akan menampilkan pesan "Looping dihentikan oleh pengguna." dan orkestrator akan selesai dengan aman.
 - **Hanya sel kosong yang diisi** — Skrip 6 tidak akan menimpa sel yang sudah berisi nilai. Jika perlu memperbarui data yang sudah ada, kosongkan dulu sel tersebut secara manual di Google Sheets.
@@ -597,4 +597,4 @@ Proyek ini dikembangkan untuk keperluan internal perusahaan. Silakan sesuaikan d
 
 ---
 
-*Dikembangkan oleh [ACC-TAX-REIGHTEEN](https://github.com/ACC-TAX-REIGHTEEN)*a
+*Dikembangkan oleh [ACC-TAX-REIGHTEEN](https://github.com/ACC-TAX-REIGHTEEN)*
