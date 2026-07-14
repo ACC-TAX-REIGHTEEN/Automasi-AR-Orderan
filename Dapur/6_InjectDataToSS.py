@@ -295,7 +295,7 @@ def run_ar_process():
             if flag_giro == 'Ya' and 'Tanggal JT' in inv_row.index and pd.notna(inv_row['Tanggal JT']):
                 tgl_jt_giro = format_excel_date(inv_row['Tanggal JT'])
                 if tgl_jt_giro.strip():
-                    line_str += f" (JT {tgl_jt_giro})"
+                    line_str += f" ({tgl_jt_giro})"
             
             note_lines.append(line_str)
 
