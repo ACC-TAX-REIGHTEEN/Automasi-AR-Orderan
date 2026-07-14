@@ -3,11 +3,8 @@ import pandas as pd
 df = pd.read_excel('ARClean_temp.xlsx')
 
 mapping_bulan = {
-    'Jan': 1,  'Feb': 2,  'Peb': 2,  'Mar': 3,  'Apr': 4,  'Mei': 5,  'Jun': 6,
-    'Jul': 7,  'Agu': 8,  'Ags': 8,  'Sep': 9,  'Okt': 10, 'Nov': 11, 'Nop': 11, 'Des': 12,
-    
-    'jan': 1,  'feb': 2,  'mar': 3,  'apr': 4,  'mei': 5,  'jun': 6,
-    'jul': 7,  'agu': 8,  'ags': 8,  'sep': 9,  'okt': 10, 'nov': 11, 'nop': 11, 'des': 12
+    1: 'Jan',  2: 'Feb',  3: 'Mar',  4: 'Apr',  5: 'Mei',  6: 'Jun',
+    7: 'Jul',  8: 'Agu',  9: 'Sep',  10: 'Okt', 11: 'Nov', 12: 'Des'
 }
 
 def ubah_format(nilai):
