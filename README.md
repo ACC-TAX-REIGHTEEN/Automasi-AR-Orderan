@@ -2,7 +2,7 @@
 
 > **Sinkronisasi data piutang AR ke Google Sheets order management secara real-time dan berkelanjutan — dari ekspor Accurate ke cell note terstruktur siap pakai tim admin sales**
 
-Pipeline Python tujuh langkah yang membaca ekspor AR dari Accurate (`Piutang.xls`) dan data Giro (`Giro.xls`), mengunduh data referensi dari tiga Google Sheets (Owing, AVG performa pelanggan, FallbackCash), menggabungkan semua sumber, lalu menyuntikkan **nilai total piutang** dan **ringkasan lengkap per pelanggan sebagai cell note** ke kolom target di Google Sheets order tracker — berjalan dalam loop otomatis setiap menit (bawaan per-15 menit) untuk menangkap pesanan baru secara real-time.
+Pipeline Python delapan langkah yang membaca ekspor AR dari Accurate (`Piutang.xls`) dan data Giro (`Giro.xls`), mengunduh data referensi dari tiga Google Sheets (Owing, AVG performa pelanggan, FallbackCash), menggabungkan semua sumber, lalu menyuntikkan **nilai total piutang** dan **ringkasan lengkap per pelanggan sebagai cell note** ke kolom target di Google Sheets order tracker — berjalan dalam loop otomatis setiap menit (bawaan per-15 menit) untuk menangkap pesanan baru secara real-time.
 
 ---
 
@@ -29,7 +29,7 @@ Pipeline Python tujuh langkah yang membaca ekspor AR dari Accurate (`Piutang.xls
 Sistem ini dirancang untuk mendukung **tim sales atau admin** yang menggunakan Google Sheets sebagai tracker order harian. Setiap baris di Google Sheets mewakili satu pesanan pelanggan. Saat baris baru dibuat (kolom target masih kosong), skrip secara otomatis mengisi:
 
 - **Nilai sel** → total Sisa Piutang pelanggan dalam format IDR
-- **Cell note** → ringkasan lengkap kondisi kredit pelanggan: plafon, rata-rata bayar, riwayat, daftar faktur aktif, status OWING dan tanggal giro
+- **Cell note** → ringkasan lengkap kondisi kredit pelanggan: plafon, rata-rata bayar, riwayat, daftar faktur aktif beserta nilai asli, titip bayar, status OWING, dan tanggal giro
 
 Semua data dikompilasi dari empat sumber:
 
@@ -49,7 +49,9 @@ Semua data dikompilasi dari empat sumber:
 - **Only-empty fill** — Hanya mengisi sel yang masih kosong di kolom target; baris yang sudah terisi tidak akan ditimpa.
 - **Multi-kode pelanggan per sel** — Satu sel di kolom `ar_key_col` dapat berisi lebih dari satu kode pelanggan (dipisah `&`); skrip menggabungkan data semua kode tersebut.
 - **Standardisasi kode pelanggan otomatis** — Menormalisasi berbagai format penulisan kode (SL001, YY 1234, MGL-5678, dll.) ke format kanonik sebelum pencocokan.
-- **Cell note terstruktur dengan 20+ flag** — Setiap komponen dalam ringkasan cell note (plafon, rata-rata bayar, nomor faktur, tanggal, umur, dll.) dapat diaktifkan atau dinonaktifkan secara individual via `config.conf`.
+- **Cell note terstruktur dengan 20+ flag** — Setiap komponen dalam ringkasan cell note dapat diaktifkan atau dinonaktifkan secara individual via `config.conf`.
+- **Filter giro kadaluarsa otomatis** — Entri Giro dengan tanggal cek yang sudah lewat (sebelum hari ini) otomatis dihapus, sehingga hanya jadwal giro mendatang yang ditampilkan di cell note.
+- **Nilai faktur asli & titip bayar per faktur** — Setiap baris faktur di cell note dapat menampilkan nilai asli faktur dan jumlah pembayaran yang sudah dititipkan (`Nilai Faktur − Sisa Piutang`).
 - **Fallback pelanggan cash** — Pelanggan yang tidak memiliki piutang aktif (tidak muncul di Piutang.xls) tetap dapat ditampilkan profilnya berkat data dari sheet FBACK.
 - **Mode demo otomatis** — Jika URL Google Sheets Owing dan AVG belum dikonfigurasi, skrip mengunduh contoh data sampel dari repositori GitHub secara otomatis.
 - **Ekslusi FRAUD** — Baris dengan kata `FRAUD` di kolom `Nama Penjual` dapat difilter berdasarkan flag `ar_data_fraud`.
@@ -93,28 +95,30 @@ Diperlukan **Google Cloud Service Account** dengan akses ke Google Sheets API da
 ```
 📦 Automasi-AR-Orderan/
 │
-├── 📄 Jalankan Automasi.py          ← Orkestrator utama. Jalankan ini
-├── 📄 Piutang.xls                   ← [INPUT] Ekspor AR dari Accurate (wajib)
-├── 📄 Giro.xls                      ← [INPUT] Rekap giro/cek masuk (opsional)
-├── 📄 Ekspor Data.png               ← Panduan visual cara ekspor dari Accurate
+├── 📄 Jalankan Automasi.py              ← Orkestrator utama. Jalankan ini
+├── 📄 Piutang.xls                       ← [INPUT] Ekspor AR dari Accurate (wajib)
+├── 📄 Giro.xls                          ← [INPUT] Rekap giro/cek masuk (opsional)
+├── 📄 Ekspor Data.png                   ← Panduan visual cara ekspor dari Accurate
 │
-├── 📁 Dapur/                        ← Folder pipeline (jangan diubah)
+├── 📁 Dapur/                            ← Folder pipeline (jangan diubah)
 │   ├── 📄 __init__.py
-│   ├── 📄 0_DownloaderData.py       ← Unduh Owing/AVG/FallbackCash dari Google Sheets
-│   ├── 📄 0_HDownloaderData.py      ← Unduh data contoh jika URL belum dikonfigurasi
-│   ├── 📄 1_CleanerAccAR.py         ← Bersihkan Piutang.xls → ARClean_temp.xlsx
-│   ├── 📄 2_CleanerAccGiro.py       ← Bersihkan Giro.xls → Giro_temp.xlsx (jika aktif)
-│   ├── 📄 3_AddGiroToSheet.py       ← Tambahkan Tanggal JT ke ARClean dari Giro
-│   ├── 📄 4_PatchFallbackCash.py    ← Tambahkan pelanggan cash dari FallbackCash
-│   ├── 📄 5_AdjDateFormat.py        ← Format ulang tanggal ke format Indonesia
-│   ├── 📄 6_InjectDataToSS.py       ← Loop sinkronisasi → inject ke Google Sheets
-│   ├── 📄 config.conf               ← Konfigurasi utama (wajib diisi sebelum pakai)
-│   └── 📄 credentials.json          ← Kredensial Google Service Account (rahasia!)
+│   ├── 📄 0_DownloaderData.py           ← Unduh Owing/AVG/FallbackCash dari Google Sheets
+│   ├── 📄 0_HDownloaderData.py          ← Unduh data contoh jika URL belum dikonfigurasi
+│   ├── 📄 1_CleanerAccAR.py             ← Bersihkan Piutang.xls → ARClean_temp.xlsx
+│   ├── 📄 2_CleanerAccGiro.py           ← Bersihkan Giro.xls → Giro_temp.xlsx (jika aktif)
+│   ├── 📄 2_HCleanerAccGiroDue.py       ← Filter giro kadaluarsa (hapus Tgl Cek < hari ini)
+│   ├── 📄 3_AddGiroToSheet.py           ← Tambahkan Tanggal JT ke ARClean dari Giro
+│   ├── 📄 4_PatchFallbackCash.py        ← Tambahkan pelanggan cash dari FallbackCash
+│   ├── 📄 5_AdjDateFormat.py            ← Format ulang tanggal ke format Indonesia
+│   ├── 📄 6_InjectDataToSS.py           ← Loop sinkronisasi → inject ke Google Sheets
+│   ├── 📄 config.conf                   ← Konfigurasi utama (wajib diisi sebelum pakai)
+│   └── 📄 credentials.json              ← Kredensial Google Service Account (rahasia!)
 │
-└── 📁 Contoh Data/                  ← Data sampel untuk mode demo
+└── 📁 Contoh Data/                      ← Data sampel untuk mode demo
     ├── 📄 Owing_temp.xlsx
     └── 📄 Avg_temp.xlsx
 ```
+
 
 ---
 
@@ -171,6 +175,11 @@ Skrip 6 berjalan dalam loop tak terbatas. Tekan **`Ctrl+C`** untuk menghentikan 
 --> Sedang mengunduh Owing_temp.xlsx...
 --> Berhasil! File disimpan sebagai Owing_temp.xlsx
 ...
+--> Memulai eksekusi 2_CleanerAccGiro.py
+--> Memulai eksekusi 2_HCleanerAccGiroDue.py
+--> Menjalankan program: Status GIRO aktif.
+--> Data berhasil diperbarui. Baris data dari hari kemarin mundur telah dihapus.
+...
 --> Memulai eksekusi 6_InjectDataToSS.py
 --> Tekan Ctrl+C untuk menghentikan loop sinkronisasi.
 --> [2025-04-01 09:00:00] Memulai sinkronisasi data AR...
@@ -188,7 +197,8 @@ Skrip 6 berjalan dalam loop tak terbatas. Tekan **`Ctrl+C`** untuk menghentikan 
    ├─── Validasi file wajib
    │       Cek Piutang.xls ada → gagal jika tidak ada
    │       Cek folder Dapur/ ada → gagal jika tidak ada
-   │       Cek 9 file syarat di Dapur/ ada → gagal jika kurang
+   │       Cek 10 file syarat di Dapur/ ada → gagal jika kurang
+   │       (termasuk 2_HCleanerAccGiroDue.py)
    │
    ├─── Bersihkan Dapur/ dari file *.xls/*.xlsx sisa run lama
    │
@@ -219,9 +229,20 @@ Skrip 6 berjalan dalam loop tak terbatas. Tekan **`Ctrl+C`** untuk menghentikan 
    │       Jika 'Ya': Bersihkan Giro.xls → Giro_temp.xlsx
    │       Jika 'Tidak': Skip seluruh step ini
    │
+   ├─── [2H] 2_HCleanerAccGiroDue.py 
+   │       Cek [GIRO] giro_stats di config.conf
+   │       Jika 'Ya':
+   │         Baca Giro_temp.xlsx
+   │         Parse kolom 'Tgl Cek' → konversi ke datetime
+   │         Filter: hanya simpan baris dengan Tgl Cek >= hari ini
+   │         Hapus baris giro yang sudah kadaluarsa (tanggal cek terlewat)
+   │         Timpa Giro_temp.xlsx dengan data yang sudah difilter
+   │       Jika 'Tidak': Skip
+   │
    ├─── [3] 3_AddGiroToSheet.py
    │       Cek [GIRO] giro_stats → Skip jika tidak aktif
    │       Bangun mapping {No. Faktur → "JT DD/MM/YY & ..."}
+   │         (hanya dari giro yang tanggalnya masih mendatang)
    │       Tambah kolom 'Tanggal JT' ke ARClean_temp.xlsx
    │
    ├─── [4] 4_PatchFallbackCash.py
@@ -243,11 +264,12 @@ Skrip 6 berjalan dalam loop tak terbatas. Tekan **`Ctrl+C`** untuk menghentikan 
              ├─ Buka spreadsheet & sheet target
              ├─ Scan semua baris → cari yang kolom target KOSONG
              ├─ Per baris kosong:
-             │    └─ Standarisasi kode pelanggan (support multi-kode & )
+             │    └─ Standarisasi kode pelanggan (support multi-kode &)
              │    └─ Lookup AR data → hitung total Sisa Piutang
              │    └─ Lookup AVG data → ambil plafon, bayar, history, tier
              │    └─ Bangun cell note terstruktur (sesuai flag aktif)
-             │    └─ Tambahkan flag OWING dan JT Giro per baris faktur
+             │    └─ Per baris faktur: tampilkan nilai asli & titip bayar jika aktif
+             │    └─ Tambahkan flag OWING dan JT Giro mendatang per faktur
              │    └─ Siapkan batch updateCells request
              ├─ Kirim batch update ke Google Sheets API
              └─ Tunggu interval_menit → ulangi
@@ -296,31 +318,59 @@ Memilih 10 kolom berdasarkan indeks posisi dan mengubah namanya:
 | 20 | `Nama Penjual` |
 | 22 | `Nama Kontak` |
 
-Setelah pembersihan, dua kolom spacer `SS` disisipkan (setelah `Tgl Faktur` dan setelah `Jatuh Tempo`) untuk menjaga kompatibilitas struktur kolom. Output: `ARClean_temp.xlsx`. File `Piutang.xls` di Dapur/ dihapus setelah berhasil.
+Dua kolom spacer `SS` disisipkan (setelah `Tgl Faktur` dan setelah `Jatuh Tempo`). Output: `ARClean_temp.xlsx`. File `Piutang.xls` di Dapur/ dihapus setelah berhasil.
 
 ---
 
-### Skrip 2 & 3 — Giro (kondisional)
+### Skrip 2 — `2_CleanerAccGiro.py` (kondisional)
 
-Diaktifkan hanya jika `[GIRO] giro_stats = Ya` di `config.conf`. Skrip 2 membersihkan `Giro.xls` → `Giro_temp.xlsx`. Skrip 3 membangun peta `{No. Faktur → "JT ..."}` dan menambahkan kolom `Tanggal JT` ke `ARClean_temp.xlsx`.
+Diaktifkan hanya jika `[GIRO] giro_stats = Ya`. Membersihkan `Giro.xls` → `Giro_temp.xlsx` dengan memilih 9 kolom standar dan membersihkan kolom angka.
+
+---
+
+### Skrip 2H — `2_HCleanerAccGiroDue.py`
+
+**Input:** `Giro_temp.xlsx` (hasil Skrip 2)
+
+Skrip baru yang berjalan tepat setelah Skrip 2, sebelum data giro diproses lebih lanjut. Fungsinya adalah **memfilter entri giro kadaluarsa** — hanya mempertahankan baris yang tanggal cairnya (`Tgl Cek`) masih hari ini atau di masa mendatang.
+
+**Logika:**
+```
+Baca Giro_temp.xlsx
+  ├─ Parse kolom 'Tgl Cek' → datetime
+  │   (mendukung Timestamp, string format Indo: "15 Jan 2025",
+  │    termasuk varian Peb, Ags, dan semua bentuk lowercase)
+  ├─ Filter: simpan hanya baris dengan Tgl Cek >= hari ini (jam 00:00:00)
+  └─ Timpa Giro_temp.xlsx dengan hasil filter
+```
+
+**Dampak:** Jadwal giro yang sudah terlewat tidak akan muncul di kolom `Tanggal JT` dalam cell note Google Sheets. Hanya tanggal cair yang masih berlaku yang ditampilkan, sehingga informasi di cell note selalu relevan dengan kondisi terkini.
+
+**Skip otomatis:** Jika `[GIRO] giro_stats` bukan `Ya`, skrip ini langsung keluar tanpa memproses apapun.
+
+---
+
+### Skrip 3 — `3_AddGiroToSheet.py`
+
+Membaca `Giro_temp.xlsx` (yang kini sudah difilter oleh Skrip 2H) dan membangun peta `{No. Faktur → "JT DD/MM/YY & ..."}`. Kolom `Tanggal JT` ditambahkan ke `ARClean_temp.xlsx`.
 
 ---
 
 ### Skrip 4 — `4_PatchFallbackCash.py`
 
-Membandingkan kode pelanggan di `ARClean_temp.xlsx` dengan `FallbackCash_temp.xlsx`. Pelanggan yang ada di FallbackCash namun tidak memiliki piutang aktif di data AR ditambahkan sebagai baris baru dengan kolom `Kode Pelanggan`, `Nama Pelanggan`, dan `Nama Kontak` terisi, kolom faktur lainnya kosong. Ini memastikan pelanggan cash tetap muncul di ringkasan Google Sheets.
+Menambahkan baris baru untuk pelanggan cash yang ada di `FallbackCash_temp.xlsx` tapi tidak punya piutang aktif di `ARClean_temp.xlsx`. Kolom yang diisi: `Kode Pelanggan`, `Nama Pelanggan`, `Nama Kontak`.
 
 ---
 
 ### Skrip 5 — `5_AdjDateFormat.py`
 
-Mengonversi nilai datetime di kolom `Tgl Faktur` dan `Jatuh Tempo` dari format datetime objek ke teks Indonesia: `"15 Jan 2025"`, `"28 Feb 2025"`, dst.
+Mengonversi `Tgl Faktur` dan `Jatuh Tempo` dari datetime ke teks Indonesia: `"15 Jan 2025"`, `"28 Feb 2025"`, dst.
 
 ---
 
 ### Skrip 6 — `6_InjectDataToSS.py` (Loop utama)
 
-Inti dari seluruh sistem. Membuka koneksi ke Google Sheets, memindai baris demi baris, dan mengisi sel kosong dengan nilai + cell note AR. Detail logika:
+Inti sistem. Memindai Google Sheets, menemukan baris dengan kolom target kosong, dan mengisinya dengan nilai + cell note AR terstruktur.
 
 **Standardisasi kode pelanggan:**
 ```
@@ -330,14 +380,11 @@ Inti dari seluruh sistem. Membuka koneksi ke Google Sheets, memindai baris demi 
 Awalan prefix yang dikenali: SL, YY, MKS, MGL, PW, PWT, PLU, SG, SMG, TGL, PA, KDI
 ```
 
-**Multi-kode per sel:**
-Sel dengan nilai `"MGL-001 & MGL-002"` akan mencari data AR untuk keduanya sekaligus dan menggabungkan hasilnya.
+**Multi-kode per sel:** `"MGL-001 & MGL-002"` → lookup keduanya, gabungkan hasilnya.
 
-**Hanya mengisi sel kosong:**
-Baris di mana kolom `ar_target_col` sudah berisi nilai apapun akan dilewati, bahkan jika datanya sudah berubah.
+**Kalkulasi titip bayar (`ar_data_inv_pay`):** `Nilai Faktur − Sisa Piutang`. Hanya ditampilkan jika hasilnya > 0 (ada pembayaran sebagian yang sudah dititipkan). Format: `Ttp Byr: 1.234.567`.
 
-**Batch update:**
-Semua perubahan dalam satu iterasi loop dikirim sekaligus via `batchUpdate` Google Sheets API, bukan satu per satu, untuk efisiensi.
+**Batch update:** Semua perubahan dalam satu iterasi dikirim sekaligus via `batchUpdate` API untuk efisiensi.
 
 ---
 
@@ -356,7 +403,7 @@ url = https://docs.google.com/spreadsheets/d/ID_SPREADSHEET/edit
 url = https://docs.google.com/spreadsheets/d/ID_SPREADSHEET/edit
 ```
 
-Kosongkan `url =` untuk skip pengunduhan (gunakan data dari run sebelumnya atau mode demo).
+Kosongkan `url =` untuk skip pengunduhan.
 
 ---
 
@@ -366,6 +413,8 @@ Kosongkan `url =` untuk skip pengunduhan (gunakan data dari run sebelumnya atau 
 [GIRO]
 giro_stats = Ya    ; Aktifkan: Ya | Nonaktifkan: No
 ```
+
+Mengontrol tiga skrip sekaligus: `2_CleanerAccGiro.py`, `2_HCleanerAccGiroDue.py`, dan `3_AddGiroToSheet.py`.
 
 ---
 
@@ -383,15 +432,15 @@ ow_excel_col = Nomor Invoice  ; Nama kolom yang berisi nomor faktur
 
 ```ini
 [AVG]
-avg_excel_sheet = Solo                    ; Nama sheet di Avg_temp.xlsx
-avg_excel_key = NO. PELANGGAN            ; Kolom kunci untuk join dengan data AR
-avg_excel_age = AVG UMUR PIUTANG         ; Kolom rata-rata umur piutang
-avg_excel_val = AVG NILAI FAKTUR         ; Kolom rata-rata nilai faktur
-avg_excel_inv = JUMLAH INVOICE           ; Kolom rata-rata jumlah invoice
-avg_excel_plaf = PLAFON                  ; Kolom plafon kredit
-avg_excel_pay = AVG BAYAR                ; Kolom rata-rata pembayaran
-avg_excel_his = AVG HISTORY BAYAR (HARI) ; Kolom histori hari bayar
-avg_excel_tier = TIERING                 ; Kolom tiering pelanggan
+avg_excel_sheet = Solo
+avg_excel_key = NO. PELANGGAN
+avg_excel_age = AVG UMUR PIUTANG
+avg_excel_val = AVG NILAI FAKTUR
+avg_excel_inv = JUMLAH INVOICE
+avg_excel_plaf = PLAFON
+avg_excel_pay = AVG BAYAR
+avg_excel_his = AVG HISTORY BAYAR (HARI)
+avg_excel_tier = TIERING
 ```
 
 ---
@@ -400,12 +449,12 @@ avg_excel_tier = TIERING                 ; Kolom tiering pelanggan
 
 ```ini
 [AR]
-ar_url = https://docs.google.com/spreadsheets/d/ID/edit  ; URL spreadsheet order tracker
-ar_time_interval = 15          ; Interval loop sinkronisasi (menit)
-ar_sheet = Solo                ; Nama sheet target di spreadsheet
-ar_key_col = KODE PELANGGAN   ; Nama kolom berisi kode pelanggan di sheet target
-ar_prod_key_col =              ; Nama kolom produk/divisi (boleh kosong)
-ar_target_col = Nominal Nota Belum Lunas  ; Kolom yang akan diisi nilai + note
+ar_url = https://docs.google.com/spreadsheets/d/ID/edit
+ar_time_interval = 15
+ar_sheet = Solo
+ar_key_col = KODE PELANGGAN
+ar_prod_key_col =
+ar_target_col = Nominal Nota Belum Lunas
 ```
 
 #### Flag filter & konteks
@@ -438,13 +487,14 @@ ar_target_col = Nominal Nota Belum Lunas  ; Kolom yang akan diisi nilai + note
 | `ar_data_inv_numb` | `Ya` | Nomor faktur |
 | `ar_data_inv_dt` | `No` | Tanggal faktur |
 | `ar_data_inv_due` | `No` | Tanggal jatuh tempo |
-| `ar_data_inv_val` | `Ya` | Total faktur aktif (jumlah baris) |
-| `ar_data_inv_orig` | `Ya` | Nominal Faktur Asli |
+| `ar_data_inv_val` | `Ya` | Total jumlah faktur aktif (hitungan baris) |
+| `ar_data_inv_orig` | `No` | Nilai nominal faktur asli (`Nilai Faktur`) |
 | `ar_data_inv_ar` | `Ya` | Sisa piutang per faktur |
-| `ar_data_inv_pay` | `Ya` | Total titip pembayaran faktur |
+| `ar_data_inv_pay` | `Ya` | Titip bayar per faktur: `Ttp Byr: X` (`Nilai Faktur − Sisa Piutang`). Hanya muncul jika nilainya > 0 |
 | `ar_data_owing` | `Ya` | Tandai `(OWING)` di baris faktur |
-| `ar_data_giro` | `Ya` | Tampilkan tanggal giro `(JT ...)` per faktur |
+| `ar_data_giro` | `Ya` | Tampilkan tanggal giro mendatang `(JT ...)` per faktur |
 | `ar_data_age` | `Ya` | Hitung umur piutang (hari dari Tgl Faktur hingga hari ini) |
+
 
 ---
 
@@ -459,7 +509,7 @@ ar_target_col = Nominal Nota Belum Lunas  ; Kolom yang akan diisi nilai + note
 
 ### 2. Pasang kredensial
 
-Ganti isi `Dapur/credentials.json` dengan file JSON yang diunduh. Format yang dibutuhkan:
+Ganti isi `Dapur/credentials.json` dengan file JSON yang diunduh:
 
 ```json
 {
@@ -475,33 +525,28 @@ Ganti isi `Dapur/credentials.json` dengan file JSON yang diunduh. Format yang di
 
 ### 3. Berikan akses ke semua spreadsheet
 
-Buka setiap Google Sheets yang digunakan (OWING, ARAVG, FBACK, dan AR target), klik **Share**, lalu tambahkan `client_email` dari `credentials.json` sebagai **Editor**.
+Buka setiap Google Sheets (OWING, ARAVG, FBACK, AR target), klik **Share**, tambahkan `client_email` sebagai **Editor** dan atau agar dapat terlihat oleh semua orang.
 
 ### 4. Struktur spreadsheet target (AR order tracker)
 
-Sheet target di Google Sheets harus memiliki:
 - Baris pertama = header kolom
-- Kolom dengan nama sesuai `ar_key_col` (misal: `KODE PELANGGAN`) — berisi kode pelanggan per baris pesanan
-- Kolom dengan nama sesuai `ar_target_col` (misal: `Nominal Nota Belum Lunas`) — ini yang akan diisi otomatis (mulai kosong)
-- Kolom pertama (A) berisi tanggal order (digunakan jika `ar_data_dt_order = Ya`)
+- Kolom `ar_key_col` → kode pelanggan per baris pesanan
+- Kolom `ar_target_col` → diisi otomatis (awalnya kosong)
+- Kolom A → tanggal order (digunakan jika `ar_data_dt_order = Ya`)
 
 ---
 
 ## 📤 Format Output: Nilai Sel & Cell Note
 
-Setiap sel yang diisi terdiri dari dua bagian:
-
 ### Nilai Sel
 
-Total `Sisa Piutang` seluruh faktur aktif pelanggan dalam format IDR (titik sebagai pemisah ribuan):
+Total `Sisa Piutang` dalam format IDR:
 
 ```
 1.234.567
 ```
 
-### Cell Note (hover/klik sel)
-
-Teks terstruktur multi-baris yang dapat dilihat dengan mengarahkan kursor ke sel atau klik ikon segitiga kecil di pojok sel:
+### Cell Note
 
 ```
 MGL-1234    Toko Makmur Jaya    PCMO
@@ -519,77 +564,93 @@ Total Faktur Aktif (Inv) :  3
 ========================================
 DAFTAR RINCIAN FAKTUR AKTIF
 ========================================
-100001   800.000   15 HR (OWING)
-100002   234.567   45 HR (JT 01/05/25)
-100003   200.000   60 HR
+100001   2.000.000   800.000   15 HR (OWING)
+100002   500.000     Ttp Byr: 265.433   234.567   45 HR (JT 01/05/25)
+100003   200.000     60 HR
 ```
 
-Setiap baris dalam **DAFTAR RINCIAN** dapat memiliki suffix:
-- `(OWING)` — nomor faktur ini ada di daftar Owing
-- `(JT DD/MM/YY)` — ada tanggal cair giro dari data `Giro.xls`
+Kolom per baris faktur (kiri ke kanan, sesuai flag yang aktif):
+
+| Komponen | Flag | Contoh |
+|---|---|---|
+| Nomor faktur | `ar_data_inv_numb` | `100001` |
+| Tanggal faktur | `ar_data_inv_dt` | `15 Jan 2025` |
+| Jatuh tempo | `ar_data_inv_due` | `15 Feb 2025` |
+| Nilai faktur asli | `ar_data_inv_orig` | `2.000.000` |
+| Sisa piutang | `ar_data_inv_ar` | `800.000` |
+| Titip bayar | `ar_data_inv_pay` | `Ttp Byr: 265.433` |
+| Umur piutang | `ar_data_age` | `15 HR` |
+| Status OWING | `ar_data_owing` | `(OWING)` |
+| Tanggal giro | `ar_data_giro` | `(JT 01/05/25)` |
+
 
 ---
 
 ## 🎮 Mode Demo (Tanpa URL)
 
-Jika belum memiliki Google Sheets yang terkonfigurasi, sistem dapat dijalankan dalam **mode demo** untuk keperluan pengujian:
+Jika belum memiliki Google Sheets yang terkonfigurasi:
 
-1. Kosongkan `url =` di seksi `[OWING]` dan `[ARAVG]` di `config.conf`
-2. Isi `ar_url`, `ar_sheet`, `ar_key_col`, dan `ar_target_col` dengan spreadsheet uji Anda
+1. Kosongkan `url =` di `[OWING]` dan `[ARAVG]`
+2. Isi `ar_url`, `ar_sheet`, `ar_key_col`, `ar_target_col` dengan spreadsheet uji
 3. Jalankan seperti biasa
 
-Skrip `0_HDownloaderData.py` akan otomatis mengunduh file contoh dari folder `Contoh Data/` di repositori GitHub ini:
+`0_HDownloaderData.py` akan mengunduh contoh dari GitHub:
 - `Owing_temp.xlsx` — contoh daftar OWING
 - `Avg_temp.xlsx` — contoh data performa pelanggan
 
-> File contoh tersedia di folder `Contoh Data/` repositori ini untuk referensi struktur kolom yang dibutuhkan.
+> File contoh tersedia di folder `Contoh Data/` untuk referensi struktur kolom.
 
 ---
 
 ## 🛠️ Troubleshooting
 
 ### ❌ `File Piutang.xls tidak ditemukan. Proses digagalkan`
-Pastikan file ada di folder utama (sejajar dengan `Jalankan Automasi.py`) dengan nama persis `Piutang.xls`.
+Pastikan file ada di folder utama dengan nama persis `Piutang.xls`.
+
+### ❌ `File 2_HCleanerAccGiroDue.py tidak ditemukan di dalam folder Dapur`
+File baru ini wajib ada di `Dapur/`. Pastikan seluruh isi repositori diunduh ulang jika baru meng-clone; file ini tidak ada di versi sebelumnya.
 
 ### ❌ `Kesalahan: Pastikan ARClean_temp.xlsx, Owing_temp.xlsx, dan Avg_temp.xlsx ada`
-Salah satu skrip 0–5 gagal menghasilkan file sementara. Jalankan skrip tersebut secara manual dari dalam folder `Dapur/` untuk melihat pesan error lengkap:
+Salah satu skrip 0–5 gagal. Jalankan manual dari `Dapur/`:
 ```bash
 cd Dapur
 python 1_CleanerAccAR.py
 ```
 
 ### ❌ `Terjadi kegagalan deteksi struktur kolom tabel Excel`
-Kolom kunci tidak ditemukan di `Owing_temp.xlsx` atau `Avg_temp.xlsx`. Periksa nilai `ow_excel_col`, `ow_excel_sheet`, `avg_excel_key`, dan `avg_excel_sheet` di `config.conf` — harus persis sesuai nama kolom/sheet di file tersebut.
+Kolom kunci tidak ditemukan di `Owing_temp.xlsx` atau `Avg_temp.xlsx`. Periksa nilai `ow_excel_col`, `ow_excel_sheet`, `avg_excel_key`, dan `avg_excel_sheet` di `config.conf`.
 
 ### ❌ `Kesalahan nama kolom di Google Sheets tidak ditemukan`
-Nilai `ar_key_col` atau `ar_target_col` tidak ditemukan di baris pertama sheet target. Buka Google Sheets target, verifikasi nama kolom persis sama (termasuk kapitalisasi dan spasi).
+Nilai `ar_key_col` atau `ar_target_col` tidak ada di baris pertama sheet target. Verifikasi nama kolom di Google Sheets (termasuk kapitalisasi dan spasi).
 
-### ❌ Loop berjalan tapi `Tidak ada data target kosong baru yang perlu diperbarui`
-Semua sel di kolom target sudah terisi. Ini normal jika semua baris sudah diproses. Sistem akan terus memantau baris baru yang ditambahkan.
+### ❌ Kolom `Tanggal JT` selalu kosong meski ada data di Giro.xls
+Kemungkinan `2_HCleanerAccGiroDue.py` menghapus semua baris karena seluruh `Tgl Cek` sudah lewat. Periksa isi `Giro.xls` — pastikan ada baris dengan tanggal cek hari ini atau yang akan datang.
 
-### ❌ Nilai sel terisi tapi cell note tidak muncul
-Kemungkinan pelanggan tidak ditemukan di `ARClean_temp.xlsx` maupun `Avg_temp.xlsx`. Periksa apakah kode pelanggan di Google Sheets (setelah standarisasi) cocok dengan kode di data AR.
+### ❌ Loop berjalan tapi `Tidak ada data target kosong baru`
+Semua baris sudah terisi. Normal jika semua pesanan sudah diproses. Sistem tetap menunggu baris baru.
 
-### ❌ `ar_data_fraud = No` tapi data FRAUD masih muncul
-Pastikan kolom `Nama Penjual` ada di `ARClean_temp.xlsx` dan berisi kata `FRAUD` pada baris yang ingin difilter. Filter dilakukan dengan `str.contains('FRAUD', case=False)`.
+### ❌ Nilai `Ttp Byr` tidak muncul di cell note
+`ar_data_inv_pay = Ya` hanya menampilkan titip bayar jika `Nilai Faktur − Sisa Piutang > 0`. Jika faktur belum ada pembayaran sama sekali, baris ini tidak akan ditampilkan.
 
 ### ❌ Error autentikasi Google (`DefaultCredentialsError` / `invalid_grant`)
-Periksa isi `Dapur/credentials.json` — pastikan file JSON valid dan `private_key` tersalin lengkap termasuk baris `-----BEGIN PRIVATE KEY-----` dan `-----END PRIVATE KEY-----`.
+Periksa isi `credentials.json` — `private_key` harus tersalin lengkap termasuk `-----BEGIN PRIVATE KEY-----` dan `-----END PRIVATE KEY-----`.
 
 ### ❌ Loop terlalu cepat / terlalu lambat
-Ubah nilai `ar_time_interval` di seksi `[AR]` config.conf. Nilai dalam menit. Interval minimum yang disarankan: 5 menit untuk menghindari rate limit Google Sheets API.
+Ubah `ar_time_interval` di `[AR]`. Minimum yang disarankan: 5 menit untuk menghindari rate limit API.
 
 ---
 
 ## 📌 Catatan Penting
 
-- **`Piutang.xls` disalin, bukan dipindahkan** — Orkestrator menggunakan `shutil.copy()`, sehingga file asli di folder utama tetap aman setelah proses selesai.
-- **`credentials.json` wajib dijaga kerahasiaannya** — Jangan pernah commit file ini ke repository publik. Tambahkan `Dapur/credentials.json` ke `.gitignore`.
-- **Skrip 6 adalah loop tak terbatas** — Hentikan dengan `Ctrl+C`. Terminal akan menampilkan pesan "Looping dihentikan oleh pengguna." dan orkestrator akan selesai dengan aman.
-- **Hanya sel kosong yang diisi** — Skrip 6 tidak akan menimpa sel yang sudah berisi nilai. Jika perlu memperbarui data yang sudah ada, kosongkan dulu sel tersebut secara manual di Google Sheets.
-- **Kode pelanggan harus konsisten** — Pastikan kode di Google Sheets order tracker dan di `Piutang.xls` menggunakan format yang sama setelah standarisasi. Gunakan awalan yang dikenali (SL, YY, MGL, dst.) untuk memastikan normalisasi berjalan dengan benar.
-- **File sementara di Dapur/ dihapus saat run baru dimulai** — Orkestrator menghapus semua `*.xls` dan `*.xlsx` di Dapur/ sebelum menyalin file baru. Jangan simpan file penting di sana.
-- **Data FBACK bersifat additive** — Skrip 4 hanya menambah baris baru, tidak pernah menghapus atau menimpa baris yang sudah ada di `ARClean_temp.xlsx`.
+- **`Piutang.xls` disalin, bukan dipindahkan** — File asli di folder utama tetap aman setelah proses.
+- **`credentials.json` wajib dijaga kerahasiaannya** — Tambahkan `Dapur/credentials.json` ke `.gitignore`. Jangan pernah commit ke repositori publik.
+- **Skrip 6 adalah loop tak terbatas** — Hentikan dengan `Ctrl+C`.
+- **Hanya sel kosong yang diisi** — Untuk memperbarui data yang sudah terisi, kosongkan dulu secara manual di Google Sheets.
+- **`2_HCleanerAccGiroDue.py` wajib ada di `Dapur/`** — Orkestrator memvalidasi keberadaannya sebelum mulai. Proses akan gagal jika file ini tidak ada.
+- **Filter giro bersifat permanen per run** — Setiap kali pipeline dijalankan, `Giro_temp.xlsx` difilter ulang berdasarkan tanggal hari itu. Giro yang cair kemarin tidak akan muncul di run hari ini.
+- **Kode pelanggan harus konsisten** — Gunakan awalan yang dikenali (SL, YY, MGL, dst.) agar standarisasi berjalan dengan benar.
+- **File sementara di `Dapur/` dihapus saat run baru** — Jangan simpan file penting di sana.
+- **Data FBACK bersifat additive** — Skrip 4 hanya menambah baris baru, tidak pernah menghapus baris yang sudah ada.
 
 ---
 
