@@ -102,7 +102,9 @@ def run_ar_process():
     flag_inv_dt = config.get('AR', 'ar_data_inv_dt', fallback='No').strip()
     flag_inv_due = config.get('AR', 'ar_data_inv_due', fallback='No').strip()
     flag_inv_val = config.get('AR', 'ar_data_inv_val', fallback='Ya').strip()
+    flag_inv_orig = config.get('AR', 'ar_data_inv_orig', fallback='No').strip()
     flag_inv_ar = config.get('AR', 'ar_data_inv_ar', fallback='Ya').strip()
+    flag_inv_pay = config.get('AR', 'ar_data_inv_pay', fallback='No').strip()
     flag_owing = config.get('AR', 'ar_data_owing', fallback='Ya').strip()
     flag_giro = config.get('AR', 'ar_data_giro', fallback='Ya').strip()
     flag_age = config.get('AR', 'ar_data_age', fallback='Ya').strip()
@@ -264,13 +266,25 @@ def run_ar_process():
                 inv_part.append(format_excel_date(inv_row.get('Tgl Faktur')))
             if flag_inv_due == 'Ya':
                 inv_part.append(format_excel_date(inv_row.get('Jatuh Tempo')))
+            if flag_inv_orig == 'Ya':
+                inv_part.append(format_idr(inv_row.get('Nilai Faktur', 0)))
             if flag_inv_ar == 'Ya':
                 inv_part.append(format_idr(inv_row.get('Sisa Piutang', 0)))
                 
+            if flag_inv_pay == 'Ya':
+                try:
+                    nilai_faktur = float(inv_row.get('Nilai Faktur', 0)) if pd.notna(inv_row.get('Nilai Faktur')) else 0.0
+                    sisa_piutang = float(inv_row.get('Sisa Piutang', 0)) if pd.notna(inv_row.get('Sisa Piutang')) else 0.0
+                    ttp_byr_val = nilai_faktur - sisa_piutang
+                    if ttp_byr_val > 0:
+                        inv_part.append(f"Ttp Byr: {format_idr(ttp_byr_val)}")
+                except (ValueError, TypeError):
+                    pass
+            
             if flag_age == 'Ya' and pd.notna(inv_row.get('Tgl Faktur')):
                 try:
                     tgl_val = str(inv_row['Tgl Faktur']).lower()
-                    indo_months = {'mei': 'may', 'agu': 'aug', 'okt': 'oct', 'des': 'dec', 'peb': 'feb'}
+                    indo_months = {'mei': 'may', 'agu': 'aug', 'okt': 'oct', 'nop': 'nov', 'des': 'dec', 'peb': 'feb'}
                     for indo, eng in indo_months.items():
                         if indo in tgl_val:
                             tgl_val = tgl_val.replace(indo, eng)
