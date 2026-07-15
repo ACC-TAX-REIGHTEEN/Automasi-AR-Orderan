@@ -440,6 +440,7 @@ ar_target_col = Nominal Nota Belum Lunas  ; Kolom yang akan diisi nilai + note
 | `ar_data_inv_due` | `No` | Tanggal jatuh tempo |
 | `ar_data_inv_val` | `Ya` | Total faktur aktif (jumlah baris) |
 | `ar_data_inv_ar` | `Ya` | Sisa piutang per faktur |
+| `ar_data_inv_pay` | `Ya` | Total titip pembayaran faktur |
 | `ar_data_owing` | `Ya` | Tandai `(OWING)` di baris faktur |
 | `ar_data_giro` | `Ya` | Tampilkan tanggal giro `(JT ...)` per faktur |
 | `ar_data_age` | `Ya` | Hitung umur piutang (hari dari Tgl Faktur hingga hari ini) |
