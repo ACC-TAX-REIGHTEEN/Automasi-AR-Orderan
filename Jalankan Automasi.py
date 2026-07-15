@@ -16,6 +16,7 @@ def jalankan_otomatisasi():
         "0_HDownloaderData.py",
         "1_CleanerAccAR.py",
         "2_CleanerAccGiro.py",
+        "2_HCleanerAccGiroDue.py",
         "3_AddGiroToSheet.py",
         "4_PatchFallbackCash.py",
         "5_AdjDateFormat.py",
@@ -61,6 +62,7 @@ def jalankan_otomatisasi():
         "0_HDownloaderData.py",
         "1_CleanerAccAR.py",
         "2_CleanerAccGiro.py",
+        "2_HCleanerAccGiroDue.py",
         "3_AddGiroToSheet.py",
         "4_PatchFallbackCash.py",
         "5_AdjDateFormat.py"
