@@ -432,15 +432,15 @@ ow_excel_col = Nomor Invoice  ; Nama kolom yang berisi nomor faktur
 
 ```ini
 [AVG]
-avg_excel_sheet = Solo
-avg_excel_key = NO. PELANGGAN
-avg_excel_age = AVG UMUR PIUTANG
-avg_excel_val = AVG NILAI FAKTUR
-avg_excel_inv = JUMLAH INVOICE
-avg_excel_plaf = PLAFON
-avg_excel_pay = AVG BAYAR
-avg_excel_his = AVG HISTORY BAYAR (HARI)
-avg_excel_tier = TIERING
+avg_excel_sheet = Solo                        ; Nama sheet di Avg_temp.xlsx
+avg_excel_key = NO. PELANGGAN                 ; Kolom kunci untuk join dengan data AR
+avg_excel_age = AVG UMUR PIUTANG              ; Kolom rata-rata umur piutang
+avg_excel_val = AVG NILAI FAKTUR              ; Kolom rata-rata nilai faktur
+avg_excel_inv = JUMLAH INVOICE                ; Kolom rata-rata jumlah invoice
+avg_excel_plaf = PLAFON                       ; Kolom plafon kredit
+avg_excel_pay = AVG BAYAR                     ; Kolom rata-rata pembayaran
+avg_excel_his = AVG HISTORY BAYAR (HARI)      ; Kolom histori hari bayar
+avg_excel_tier = TIERING                      ; Kolom tiering pelanggan
 ```
 
 ---
@@ -449,12 +449,12 @@ avg_excel_tier = TIERING
 
 ```ini
 [AR]
-ar_url = https://docs.google.com/spreadsheets/d/ID/edit
-ar_time_interval = 15
-ar_sheet = Solo
-ar_key_col = KODE PELANGGAN
-ar_prod_key_col =
-ar_target_col = Nominal Nota Belum Lunas
+ar_url = https://docs.google.com/spreadsheets/d/ID/edit  ; URL spreadsheet order tracker
+ar_time_interval = 15                                    ; Interval loop sinkronisasi (menit)
+ar_sheet = Solo                                          ; Nama sheet target di spreadsheet
+ar_key_col = KODE PELANGGAN                              ; Nama kolom berisi kode pelanggan di sheet target
+ar_prod_key_col =                                        ; Nama kolom produk/divisi (boleh kosong)
+ar_target_col = Nominal Nota Belum Lunas                 ; Kolom yang akan diisi nilai + note
 ```
 
 #### Flag filter & konteks
