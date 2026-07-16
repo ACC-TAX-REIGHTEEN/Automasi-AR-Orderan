@@ -143,10 +143,11 @@ def run_ar_process():
         return
         
     header = all_rows[0]
+    header_clean = [str(h).strip().upper() for h in header]
     
     try:
-        key_col_idx = header.index(ar_key_col_name)
-        target_col_idx = header.index(ar_target_col_name)
+        key_col_idx = header_clean.index(ar_key_col_name.strip().upper())
+        target_col_idx = header_clean.index(ar_target_col_name.strip().upper())
     except ValueError as e:
         print(f"--> Kesalahan nama kolom di Google Sheets tidak ditemukan: {e}")
         return
