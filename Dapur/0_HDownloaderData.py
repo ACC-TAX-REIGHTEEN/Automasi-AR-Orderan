@@ -2,14 +2,27 @@ import configparser
 import requests
 import os
 
-def download_file(url, output_name):
+def download_sheet_from_gdrive(url, output_name):
+    
+    if '/d/' in url:
+        base_id = url.split('/d/')[1].split('/')[0]
+        download_url = f"https://docs.google.com/spreadsheets/d/{base_id}/export?format=xlsx"
+    else:
+        print(f"--> Gagal: URL untuk {output_name} bukan format Google Sheets yang valid!")
+        return
+
     try:
-        print(f"--> Sedang mengunduh {output_name}...")
-        response = requests.get(url)
+        print(f"--> Sedang mengunduh {output_name} dari Google Sheets Cadangan...")
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(download_url, timeout=15, headers=headers)
         response.raise_for_status()
         with open(output_name, 'wb') as f:
             f.write(response.content)
         print(f"--> Berhasil! File disimpan sebagai {output_name}")
+    except requests.exceptions.Timeout:
+        print(f"--> Gagal: Koneksi terlalu lama (Timeout) saat mengunduh {output_name}")
     except Exception as e:
         print(f"--> Gagal mengunduh {output_name}: {e}")
 
@@ -22,35 +35,31 @@ def main():
     config = configparser.ConfigParser(allow_no_value=True)
     config.read(config_file)
 
-    owing_url = ''
-    aravg_url = ''
+    owing_url = config.get('OWING', 'url', fallback='').strip() if config.has_section('OWING') else ''
+    aravg_url = config.get('ARAVG', 'url', fallback='').strip() if config.has_section('ARAVG') else ''
 
-    if config.has_section('OWING') and config.has_option('OWING', 'url'):
-        owing_url = config.get('OWING', 'url')
-    if config.has_section('ARAVG') and config.has_option('ARAVG', 'url'):
-        aravg_url = config.get('ARAVG', 'url')
+    fback_ow_url = config.get('FBACKOW', 'url', fallback='').strip() if config.has_section('FBACKOW') else ''
+    fback_aravg_url = config.get('FBACKARAVG', 'url', fallback='').strip() if config.has_section('FBACKARAVG') else ''
 
-    owing_str = str(owing_url or '').strip()
-    aravg_str = str(aravg_url or '').strip()
+    print("--- Memulai Pengecekan URL Konfigurasi (Lokal & Google Sheets Cadangan) ---")
 
-    fallback_downloads = {
-        'Owing_temp.xlsx': 'https://github.com/ACC-TAX-REIGHTEEN/Automasi-AR-Orderan/raw/refs/heads/main/Contoh%20Data/Owing_temp.xlsx',
-        'Avg_temp.xlsx': 'https://github.com/ACC-TAX-REIGHTEEN/Automasi-AR-Orderan/raw/refs/heads/main/Contoh%20Data/Avg_temp.xlsx'
-    }
-
-    print("--- Memulai Pengecekan URL Konfigurasi ---")
-
-    if not owing_str:
-        print("--> [OWING] URL Kosong! Mengunduh data cadangan dari GitHub...")
-        download_file(fallback_downloads['Owing_temp.xlsx'], 'Owing_temp.xlsx')
+    if not owing_url:
+        print("--> [OWING] URL Utama kosong.")
+        if fback_ow_url:
+            download_sheet_from_gdrive(fback_ow_url, 'Owing_temp.xlsx')
+        else:
+            print("--> Peringatan: URL Utama [OWING] dan Cadangan [FBACKOW] KOSONG! File Owing_temp.xlsx tidak dapat diperbarui.")
     else:
-        print("--> [OWING] URL Terisi. Mengabaikan unduhan cadangan Owing.")
+        print("--> [OWING] URL Utama Terisi. Mengabaikan unduhan cadangan.")
 
-    if not aravg_str:
-        print("--> [ARAVG] URL Kosong! Mengunduh data cadangan dari GitHub...")
-        download_file(fallback_downloads['Avg_temp.xlsx'], 'Avg_temp.xlsx')
+    if not aravg_url:
+        print("--> [ARAVG] URL Utama kosong.")
+        if fback_aravg_url:
+            download_sheet_from_gdrive(fback_aravg_url, 'Avg_temp.xlsx')
+        else:
+            print("--> Peringatan: URL Utama [ARAVG] dan Cadangan [FBACKARAVG] KOSONG! File Avg_temp.xlsx tidak dapat diperbarui.")
     else:
-        print("--> [ARAVG] URL Terisi. Mengabaikan unduhan cadangan Avg.")
+        print("--> [ARAVG] URL Utama Terisi. Mengabaikan unduhan cadangan.")
 
 if __name__ == "__main__":
     main()
