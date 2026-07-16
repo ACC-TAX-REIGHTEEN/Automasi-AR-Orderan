@@ -33,17 +33,24 @@ def main():
     owing_str = str(owing_url or '').strip()
     aravg_str = str(aravg_url or '').strip()
 
-    if owing_str and aravg_str:
-        print("--> Kedua URL terisi, melewati proses unduhan")
-        return
-
-    downloads = {
+    fallback_downloads = {
         'Owing_temp.xlsx': 'https://github.com/ACC-TAX-REIGHTEEN/Automasi-AR-Orderan/raw/refs/heads/main/Contoh%20Data/Owing_temp.xlsx',
         'Avg_temp.xlsx': 'https://github.com/ACC-TAX-REIGHTEEN/Automasi-AR-Orderan/raw/refs/heads/main/Contoh%20Data/Avg_temp.xlsx'
     }
 
-    for output_name, url in downloads.items():
-        download_file(url, output_name)
+    print("--- Memulai Pengecekan URL Konfigurasi ---")
+
+    if not owing_str:
+        print("--> [OWING] URL Kosong! Mengunduh data cadangan dari GitHub...")
+        download_file(fallback_downloads['Owing_temp.xlsx'], 'Owing_temp.xlsx')
+    else:
+        print("--> [OWING] URL Terisi. Mengabaikan unduhan cadangan Owing.")
+
+    if not aravg_str:
+        print("--> [ARAVG] URL Kosong! Mengunduh data cadangan dari GitHub...")
+        download_file(fallback_downloads['Avg_temp.xlsx'], 'Avg_temp.xlsx')
+    else:
+        print("--> [ARAVG] URL Terisi. Mengabaikan unduhan cadangan Avg.")
 
 if __name__ == "__main__":
     main()
