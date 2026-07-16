@@ -310,7 +310,11 @@ def run_ar_process():
                 tgl_jt_giro = format_excel_date(inv_row['Tanggal JT'])
                 if tgl_jt_giro.strip():
                     line_str += f" ({tgl_jt_giro})"
-            
+                    
+            if flag_fraud == 'Ya' and 'Nama Penjual' in inv_row.index:
+                if 'FRAUD' in str(inv_row.get('Nama Penjual', '')).upper():
+                    line_str += " (FRAUD)"
+                
             note_lines.append(line_str)
 
         final_note_text = "\n".join(note_lines)
