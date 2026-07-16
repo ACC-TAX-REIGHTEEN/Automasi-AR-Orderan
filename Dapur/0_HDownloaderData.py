@@ -41,7 +41,7 @@ def main():
     fback_ow_url = config.get('FBACKOW', 'url', fallback='').strip() if config.has_section('FBACKOW') else ''
     fback_aravg_url = config.get('FBACKARAVG', 'url', fallback='').strip() if config.has_section('FBACKARAVG') else ''
 
-    print("--- Memulai Pengecekan URL Konfigurasi (Lokal & Google Sheets Cadangan) ---")
+    print("--> Memulai Pengecekan URL Konfigurasi")
 
     if not owing_url:
         print("--> [OWING] URL Utama kosong.")
