@@ -17,14 +17,15 @@ def safe_str(val, fallback='#N/A'):
         return fallback
     return str(val).strip()
 
-def standardize_code(code):
+def standardize_code(code, depo_prefixes="SL|YY|MKS|MGL|PW|PWT|PLU|SG|SMG|TGL|PA|KDI"):
     if pd.isna(code):
         return "" 
     if isinstance(code, float) and code.is_integer():
         code = int(code)    
     s = str(code).strip().upper()
     s = re.sub(r'\s*-\s*', '-', s)
-    s = re.sub(r'^(SL|YY|MKS|MGL|PW|PWT|PLU|SG|SMG|TGL|PA|KDI)\s*(\d+)', r'\1-\2', s)
+    pattern = rf'^({depo_prefixes})\s*(\d+)'
+    s = re.sub(pattern, r'\1-\2', s)
     s = re.sub(r'(\d+)([A-Z])$', r'\1 \2', s)
     return s
 
@@ -70,6 +71,8 @@ def run_ar_process():
     print(f"--> [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Memulai sinkronisasi data AR...")
     
     config = load_config()
+    
+    depo_config = config.get('MAP', 'depo', fallback='SL|YY|MKS|MGL|PW|PWT|PLU|SG|SMG|TGL|PA|KDI').strip()
     
     ow_sheet_name = config.get('OWCOLKEY', 'ow_excel_sheet', fallback='SOLO').strip()
     ow_col_name = config.get('OWCOLKEY', 'ow_excel_col', fallback='Nomor Invoice').strip()
@@ -121,8 +124,8 @@ def run_ar_process():
         print(f"--> Terjadi kegagalan deteksi struktur kolom tabel Excel: {ke}")
         return
 
-    df_ar_clean['Clean_Kode'] = df_ar_clean['Kode Pelanggan'].apply(standardize_code)
-    df_avg['Clean_Kode'] = df_avg[avg_key_col].apply(standardize_code)
+    df_ar_clean['Clean_Kode'] = df_ar_clean['Kode Pelanggan'].apply(lambda x: standardize_code(x, depo_config))
+    df_avg['Clean_Kode'] = df_avg[avg_key_col].apply(lambda x: standardize_code(x, depo_config))
     
     owing_set = set(df_owing[ow_col_name].dropna().astype(str).str.strip())
 
@@ -165,7 +168,7 @@ def run_ar_process():
             continue
 
         raw_key = row[key_col_idx]
-        std_keys = [standardize_code(k.strip()) for k in str(raw_key).split('&') if k.strip()]
+        std_keys = [standardize_code(k.strip(), depo_config) for k in str(raw_key).split('&') if k.strip()]
         
         if not std_keys:
             continue
