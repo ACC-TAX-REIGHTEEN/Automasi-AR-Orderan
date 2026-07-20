@@ -188,6 +188,23 @@ def run_ar_process():
                 (user_ar_rows['No. Faktur'].astype(str).str.strip().str.lower() != 'nan') &
                 (user_ar_rows['No. Faktur'].astype(str).str.strip() != '')
             ]
+
+        if not user_ar_rows.empty and 'Tgl Faktur' in user_ar_rows.columns:
+            indo_months = {'mei': 'may', 'agu': 'aug', 'okt': 'oct', 'nop': 'nov', 'des': 'dec', 'peb': 'feb'}
+            
+            def parse_date_sort(val):
+                if pd.isna(val):
+                    return pd.NaT
+                val_str = str(val).lower().strip()
+                for indo, eng in indo_months.items():
+                    if indo in val_str:
+                        val_str = val_str.replace(indo, eng)
+                        break
+                return pd.to_datetime(val_str, errors='coerce')
+
+            user_ar_rows = user_ar_rows.copy()
+            user_ar_rows['Temp_Sort_Date'] = user_ar_rows['Tgl Faktur'].apply(parse_date_sort)
+            user_ar_rows = user_ar_rows.sort_values(by='Temp_Sort_Date', ascending=True)
         
         total_sisa_piutang = 0
         if not user_ar_rows.empty and 'Sisa Piutang' in user_ar_rows.columns:
