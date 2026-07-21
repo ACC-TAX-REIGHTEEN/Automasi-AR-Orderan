@@ -4,6 +4,17 @@ import os
 import time
 import configparser
 import shutil
+import threading
+
+def stream_logs(prefix_folder, pipe):
+    try:
+        for line in iter(pipe.readline, ''):
+            if line:
+                print(f"[{prefix_folder}] {line.rstrip()}")
+    except Exception:
+        pass
+    finally:
+        pipe.close()
 
 def main():
     config_file = 'depo.conf'
@@ -20,6 +31,7 @@ def main():
         return
 
     proses_berjalan = []
+    threads = []
     files_to_transfer = ['Piutang.xls', 'Giro.xls']
 
     print("--> " + "=" * 50)
@@ -64,8 +76,24 @@ def main():
                         print(f"    [!] Peringatan: File sumber master {source_file_path} tidak ditemukan!")
 
                 print(f"--> [INFO] Menjalankan '{nama_file}' di dalam lingkungan '{nama_folder}'...")
-                proses = subprocess.Popen([sys.executable, nama_file], cwd=nama_folder)
+                
+                proses = subprocess.Popen(
+                    [sys.executable, "-u", nama_file],
+                    cwd=nama_folder,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1
+                )
                 proses_berjalan.append(proses)
+
+                t = threading.Thread(
+                    target=stream_logs, 
+                    args=(nama_folder, proses.stdout), 
+                    daemon=True
+                )
+                t.start()
+                threads.append(t)
             else:
                 print(f"--> [PERINGATAN] File tidak ditemukan pada lokasi target: {path}")
 
@@ -77,7 +105,7 @@ def main():
             time.sleep(1)
 
     except KeyboardInterrupt:
-        print("--> \n\n[MENDETEKSI CTRL+C] Menghentikan seluruh sub-sistem automasi, mohon tunggu...")
+        print("\n--> [MENDETEKSI CTRL+C] Menghentikan seluruh sub-sistem automasi, mohon tunggu...")
         for proses in proses_berjalan:
             proses.terminate()
         print("--> [SELESAI] Semua proses automasi aktif telah berhasil dimatikan secara bersih.")
