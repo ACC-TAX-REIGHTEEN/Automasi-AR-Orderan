@@ -151,11 +151,12 @@ def run_ar_process():
     try:
         key_col_idx = header_clean.index(ar_key_col_name.strip().upper())
         target_col_idx = header_clean.index(ar_target_col_name.strip().upper())
+        
+        prod_key_clean = ar_prod_key_col_name.strip().upper()
+        prod_col_idx = header_clean.index(prod_key_clean) if prod_key_clean in header_clean else None
     except ValueError as e:
         print(f"--> Kesalahan nama kolom di Google Sheets tidak ditemukan: {e}")
         return
-        
-    prod_col_idx = header.index(ar_prod_key_col_name) if ar_prod_key_col_name in header else None
 
     requests = []
     current_date = datetime.now().date()
