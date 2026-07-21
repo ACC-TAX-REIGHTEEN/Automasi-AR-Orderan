@@ -369,6 +369,8 @@ def run_ar_process():
         print("--> Tidak ada data target kosong baru yang perlu diperbarui.")
 
 if __name__ == "__main__":
+    from datetime import datetime, timedelta
+    
     while True:
         try:
             config_load = load_config()
@@ -381,5 +383,9 @@ if __name__ == "__main__":
         except Exception as err:
             print(f"--> Terjadi error runtime saat proses berjalan: {err}")
             
-        print(f"--> Menunggu interval selama {interval_menit} menit berikutnya...\n")
+        next_run = datetime.now() + timedelta(minutes=interval_menit)
+        jam_berikutnya = next_run.strftime('%H:%M:%S')
+        
+        print(f"--> Proses selesai dan dalam mode STANDBY. Menunggu {interval_menit} menit (Eksekusi berikutnya pukul {jam_berikutnya})\n")
+        
         time.sleep(interval_menit * 60)
