@@ -1,6 +1,32 @@
 import pandas as pd
 import os
 import time
+import configparser
+import sys
+
+config_file = 'config.conf'
+
+if not os.path.exists(config_file):
+    print(f"--> File konfigurasi '{config_file}' tidak ditemukan. Proses dihentikan.")
+    sys.exit()
+
+config = configparser.ConfigParser()
+
+try:
+    config.read(config_file)
+    status_acc = config.get('ACC', 'data').strip().upper()
+except Exception as e:
+    print(f"--> Gagal membaca section [ACC] atau key 'data' dari {config_file}: {e}")
+    sys.exit()
+
+if status_acc == 'DEPO':
+    print("--> Status data adalah DEPO. Seluruh proses dalam script ini dilewati.")
+    sys.exit()
+elif status_acc == 'PST':
+    print("--> Status data adalah PST. Melanjutkan proses pembersihan data...")
+else:
+    print(f"--> Nilai status '{status_acc}' tidak dikenal. Proses dihentikan.")
+    sys.exit()
 
 print("--> Proses pembersihan data (cleaning)")
 
@@ -8,7 +34,7 @@ file_path = 'Piutang.xls'
 
 if not os.path.exists(file_path):
     print(f"--> File '{file_path}' tidak ditemukan. Pastikan file ada.")
-    exit()
+    sys.exit()
 
 def load_dataset(path):
     try:
@@ -20,7 +46,7 @@ df = load_dataset(file_path)
 
 if df is None:
     print("--> Gagal membaca file Piutang.xls.")
-    exit()
+    sys.exit()
 
 target_indices = [2, 3, 5, 9, 11, 14, 16, 18, 20, 22]
 df_clean = df.iloc[:, target_indices].copy()
