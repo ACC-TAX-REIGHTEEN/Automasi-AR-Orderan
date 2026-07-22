@@ -386,6 +386,6 @@ if __name__ == "__main__":
         next_run = datetime.now() + timedelta(minutes=interval_menit)
         jam_berikutnya = next_run.strftime('%H:%M:%S')
         
-        print(f"--> Proses selesai dan dalam mode STANDBY. Menunggu {interval_menit} menit (Eksekusi berikutnya pukul {jam_berikutnya})...\n")
+        print(f"--> Proses selesai dan dalam mode STANDBY. Menunggu {interval_menit} menit (Eksekusi berikutnya pukul {jam_berikutnya})\n")
         
         time.sleep(interval_menit * 60)
