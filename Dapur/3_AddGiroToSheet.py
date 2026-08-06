@@ -102,7 +102,7 @@ for no_faktur, tgl_list in giro_groups.items():
         days_str = ",".join(date_by_month_year[key])
         group_strings.append(f"{days_str}/{m_short}/{y_short}")
             
-    mapping_jt[no_faktur] = "JT " + " & ".join(group_strings)
+    mapping_jt[no_faktur] = "JT BG " + " & ".join(group_strings)
 
 print(f"--> Membaca file target {target_file}...")
 try:
