@@ -12,8 +12,8 @@ if giro_stats.strip() == 'Ya':
 
     indo_months_in = {
     'Jan': 'Jan', 'Feb': 'Feb', 'Mar': 'Mar', 'Apr': 'Apr', 'Mei': 'May', 'Jun': 'Jun',
-    'Jul': 'Jul', 'Agu': 'Aug', 'Agt': 'Aug', 'Sep': 'Sep', 'Okt': 'Oct', 'Nop': 'Nov', 'Des': 'Dec',
-    'Peb': 'Feb', 'Ags': 'Aug', 
+    'Jul': 'Jul', 'Agu': 'Aug', 'Sep': 'Sep', 'Okt': 'Oct', 'Nop': 'Nov', 'Des': 'Dec',
+    'Peb': 'Feb', 'Ags': 'Aug', 'Agt': 'Aug', 
     'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'apr': 'Apr', 'mei': 'May', 'jun': 'Jun',
     'jul': 'Jul', 'agu': 'Aug', 'ags': 'Aug', 'agt': 'Aug', 'sep': 'Sep', 'okt': 'Oct', 'nop': 'Nov', 
     'nov': 'Nov', 'des': 'Dec'
