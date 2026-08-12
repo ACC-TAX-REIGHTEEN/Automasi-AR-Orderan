@@ -16,7 +16,7 @@ if giro_stats.strip() == 'Ya':
     'Peb': 'Feb', 'Ags': 'Aug', 'Agt': 'Aug', 
     'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'apr': 'Apr', 'mei': 'May', 'jun': 'Jun',
     'jul': 'Jul', 'agu': 'Aug', 'ags': 'Aug', 'agt': 'Aug', 'sep': 'Sep', 'okt': 'Oct', 'nop': 'Nov', 
-    'nov': 'Nov', 'des': 'Dec'
+    'nov': 'Nov', 'des': 'Dec', 'peb': 'Feb'
     }
 
     def parse_indo_date(date_str):
