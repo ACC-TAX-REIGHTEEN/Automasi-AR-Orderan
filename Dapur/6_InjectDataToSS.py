@@ -191,7 +191,7 @@ def run_ar_process():
             ]
 
         if not user_ar_rows.empty and 'Tgl Faktur' in user_ar_rows.columns:
-            indo_months = {'mei': 'may', 'agu': 'aug', 'okt': 'oct', 'nop': 'nov', 'des': 'dec', 'peb': 'feb'}
+            indo_months = {'mei': 'may', 'agu': 'aug', 'agt': 'aug', 'ags': 'aug', 'okt': 'oct', 'nop': 'nov', 'des': 'dec', 'peb': 'feb'}
             
             def parse_date_sort(val):
                 if pd.isna(val):
@@ -306,7 +306,7 @@ def run_ar_process():
             if flag_age == 'Ya' and pd.notna(inv_row.get('Tgl Faktur')):
                 try:
                     tgl_val = str(inv_row['Tgl Faktur']).lower()
-                    indo_months = {'mei': 'may', 'agu': 'aug', 'okt': 'oct', 'nop': 'nov', 'des': 'dec', 'peb': 'feb'}
+                    indo_months = {'mei': 'may', 'agu': 'aug', 'agu': 'aug', 'ags': 'aug', 'agt': 'aug', 'okt': 'oct', 'nop': 'nov', 'des': 'dec', 'peb': 'feb'}
                     for indo, eng in indo_months.items():
                         if indo in tgl_val:
                             tgl_val = tgl_val.replace(indo, eng)
