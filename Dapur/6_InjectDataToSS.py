@@ -1,5 +1,5 @@
 import configparser
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import re
 import time
@@ -502,15 +502,9 @@ def run_ar_process():
 
             if flag_age == "Ya":
                 target_dt = None
+                tgl_faktur_dt_val = None
 
-                if (
-                    flag_giro == "Ya"
-                    and "Tanggal JT" in inv_row.index
-                    and pd.notna(inv_row["Tanggal JT"])
-                ):
-                    target_dt = parse_max_jt_date(inv_row["Tanggal JT"])
-
-                if target_dt is None and pd.notna(inv_row.get("Tgl Faktur")):
+                if pd.notna(inv_row.get("Tgl Faktur")):
                     try:
                         tgl_val = str(inv_row["Tgl Faktur"]).lower()
                         indo_months = {
@@ -528,14 +522,24 @@ def run_ar_process():
                                 tgl_val = tgl_val.replace(indo, eng)
                                 break
 
-                        tgl_faktur_dt = pd.to_datetime(tgl_val, errors="coerce")
-                        if pd.notna(tgl_faktur_dt):
-                            target_dt = tgl_faktur_dt.date()
+                        parsed_tf = pd.to_datetime(tgl_val, errors="coerce")
+                        if pd.notna(parsed_tf):
+                            tgl_faktur_dt_val = parsed_tf.date()
                     except Exception:
-                        target_dt = None
+                        tgl_faktur_dt_val = None
 
-                if target_dt is not None:
-                    selisih_hari = (current_date - target_dt).days
+                if (
+                    flag_giro == "Ya"
+                    and "Tanggal JT" in inv_row.index
+                    and pd.notna(inv_row["Tanggal JT"])
+                ):
+                    target_dt = parse_max_jt_date(inv_row["Tanggal JT"])
+
+                if target_dt is not None and tgl_faktur_dt_val is not None:
+                    selisih_hari = abs((target_dt - tgl_faktur_dt_val).days)
+                    inv_part.append(f"{selisih_hari}\tHR")
+                elif target_dt is None and tgl_faktur_dt_val is not None:
+                    selisih_hari = abs((current_date - tgl_faktur_dt_val).days)
                     inv_part.append(f"{selisih_hari}\tHR")
                 else:
                     inv_part.append("-\tHR")
