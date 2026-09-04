@@ -460,7 +460,7 @@ def run_ar_process():
             note_lines.append(f"Rata-Rata Bayar\t\t\t :  {avg_pay} ")
         if flag_avg_his == "Ya":
             note_lines.append(
-                f"Rata-Rata History Bayar\t : {avg_his.replace(' HR', '')} Hari"
+                f"Rata-Rata History Bayar\t :  {avg_his.replace(' HR', '')} Hari"
             )
 
         note_lines.append("")
