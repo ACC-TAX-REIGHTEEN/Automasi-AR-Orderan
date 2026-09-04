@@ -449,7 +449,7 @@ def run_ar_process():
             note_lines.append(f"Avg Jumlah Faktur\t\t : {avg_inv}")
         if flag_inv_val == "Ya":
             note_lines.append(
-                f"Total Faktur Aktif (Inv) :  {len(user_ar_rows)} "
+                f"Total Faktur Aktif (Inv)\t :  {len(user_ar_rows)} "
             )
 
         note_lines.append("")
