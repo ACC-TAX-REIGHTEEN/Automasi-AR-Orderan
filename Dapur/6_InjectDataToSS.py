@@ -444,7 +444,7 @@ def run_ar_process():
         if flag_avg_age == "Ya":
             note_lines.append(f"Avg Umur Piutang\t\t : {avg_age}")
         if flag_avg_val == "Ya":
-            note_lines.append(f"Avg Nilai Faktur\t\t : {avg_val}")
+            note_lines.append(f"Avg Nilai Faktur\t\t\t : {avg_val}")
         if flag_avg_inv == "Ya":
             note_lines.append(f"Avg Jumlah Faktur\t\t : {avg_inv}")
         if flag_inv_val == "Ya":
