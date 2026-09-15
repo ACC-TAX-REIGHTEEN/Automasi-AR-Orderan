@@ -437,7 +437,7 @@ def run_ar_process():
         note_lines.append("========================================")
 
         if flag_calc == "Ya":
-            note_lines.append(f"Piutang\t\t\t\t\t :  {formatted_piutang_val} ")
+            note_lines.append(f"Piutang\t\t\t\t\t : {formatted_piutang_val} ")
         if flag_avg_tier == "Ya":
             note_lines.append(f"Tiering\t\t\t\t\t : {avg_tier}")
 
