@@ -103,7 +103,7 @@ def main():
 
         print("\n--> " + "=" * 50, flush=True)
         print("--> [SUKSES] Semua automasi aktif berhasil diperbarui dan kini berjalan.", flush=True)
-        print("--> -> Tekan CTRL + C pada terminal ini untuk menghentikan semuanya sekaligus.\n", flush=True)
+        print("--> Tekan CTRL + C pada terminal ini untuk menghentikan semuanya sekaligus.\n", flush=True)
 
         while True:
             time.sleep(1)
