@@ -38,8 +38,13 @@ if not os.path.exists(file_path):
 
 def load_dataset(path):
     try:
-        return pd.read_excel(path, header=3)
-    except:
+        return pd.read_excel(path, header=3, engine='calamine')
+    except (ImportError, ValueError):
+        try:
+            return pd.read_excel(path, header=3)
+        except Exception:
+            return None
+    except Exception:
         return None
 
 df = load_dataset(file_path)
@@ -86,7 +91,6 @@ indo_months_in = {
     'Jan': 'Jan', 'Feb': 'Feb', 'Mar': 'Mar', 'Apr': 'Apr', 'Mei': 'May', 'Jun': 'Jun',
     'Jul': 'Jul', 'Agu': 'Aug', 'Sep': 'Sep', 'Okt': 'Oct', 'Nop': 'Nov', 'Des': 'Dec',
     'Peb': 'Feb', 'Ags': 'Aug', 'Agt': 'Aug',
-    
     'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'apr': 'Apr', 'mei': 'May', 'jun': 'Jun',
     'jul': 'Jul', 'agu': 'Aug', 'ags': 'Aug', 'agt': 'Aug', 'sep': 'Sep', 'okt': 'Oct', 'nop': 'Nov', 
     'nov': 'Nov', 'des': 'Dec'
@@ -116,7 +120,7 @@ if 'Jatuh Tempo' in df_clean.columns:
     idx_jt = df_clean.columns.get_loc('Jatuh Tempo')
     df_clean.insert(idx_jt + 1, 'SS', '', allow_duplicates=True)
 
-df_clean.reset_index(drop=True, inplace=True)
+df_clean = df_clean.reset_index(drop=True)
 
 output_filename = "ARClean_temp.xlsx"
 

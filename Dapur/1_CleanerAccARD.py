@@ -8,7 +8,6 @@ indo_months_in = {
     'Jan': 'Jan', 'Feb': 'Feb', 'Mar': 'Mar', 'Apr': 'Apr', 'Mei': 'May', 'Jun': 'Jun',
     'Jul': 'Jul', 'Agu': 'Aug', 'Agt': 'Aug', 'Sep': 'Sep', 'Okt': 'Oct', 'Nop': 'Nov', 'Des': 'Dec',
     'Peb': 'Feb', 'Ags': 'Aug', 
-    
     'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'apr': 'Apr', 'mei': 'May', 'jun': 'Jun',
     'jul': 'Jul', 'agu': 'Aug', 'ags': 'Aug', 'agt': 'Aug', 'sep': 'Sep', 'okt': 'Oct', 'nop': 'Nov', 
     'nov': 'Nov', 'des': 'Dec'
@@ -17,19 +16,15 @@ indo_months_in = {
 def parse_tgl_faktur(val):
     if pd.isna(val) or str(val).strip().lower() in ['', 'nan', 'none']:
         return np.nan
-    
     if isinstance(val, (pd.Timestamp, datetime.datetime, datetime.date)):
         return val.strftime('%Y-%m-%d %H:%M:%S')
-    
     val_str = str(val).strip()
-    
     parts = val_str.split()
     if len(parts) == 3:
         day, month, year = parts[0], parts[1], parts[2]
         if month in indo_months_in:
             month = indo_months_in[month]
             val_str = f"{day} {month} {year}"
-    
     try:
         dt = pd.to_datetime(val_str, dayfirst=True)
         return dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -41,7 +36,6 @@ def check_config_status():
     if not os.path.exists(config_file):
         print(f"--> Warning: File '{config_file}' tidak ditemukan. Mengabaikan pengecekan config.")
         return True
-
     config = configparser.ConfigParser()
     try:
         config.read(config_file)
@@ -63,11 +57,12 @@ def check_config_status():
 def clean_data_autofit(input_file, output_file):
     if not check_config_status():
         return
-
     print(f"--> Sedang memproses file: {input_file}...")
-    
     try:
-        df = pd.read_excel(input_file, header=None)
+        try:
+            df = pd.read_excel(input_file, header=None, engine='calamine')
+        except (ImportError, ValueError):
+            df = pd.read_excel(input_file, header=None)
     except Exception as e:
         print(f"--> Error membaca file: {e}")
         return
@@ -87,7 +82,6 @@ def clean_data_autofit(input_file, output_file):
     
     header_map = {}
     start_row = 0
-    
     for i in range(min(150, len(df))):
         for j in range(len(df.columns)):
             val = str(df.iat[i, j]).strip()
@@ -102,11 +96,9 @@ def clean_data_autofit(input_file, output_file):
 
     col_faktur = header_map["No. Faktur"]
     df_data = df.iloc[start_row + 1:].copy()
-    
     df_data[col_faktur] = df_data[col_faktur].astype(str).str.strip()
     kondisi_kosong_faktur = df_data[col_faktur].str.lower().isin(['nan', 'none', ''])
     df_data.loc[kondisi_kosong_faktur, col_faktur] = np.nan
-    
     df_clean = df_data.dropna(subset=[col_faktur]).copy()
     
     header_labels = ["No. Faktur", "Faktur", "No.", "Total", "Halaman", "Page", "Tanggal"]
@@ -148,7 +140,6 @@ def clean_data_autofit(input_file, output_file):
         if isinstance(val, (int, float)):
             return float(val)
         s = str(val).strip()
-        
         if '.' in s and ',' in s:
             if s.rfind(',') > s.rfind('.'):
                 s = s.replace('.', '').replace(',', '.')
@@ -188,20 +179,18 @@ def clean_data_autofit(input_file, output_file):
     ]
     temp_df.columns = final_headers
     df_final = temp_df.copy()
-    df_final.reset_index(drop=True, inplace=True)
+    df_final = df_final.reset_index(drop=True)
     
     try:
         with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
             df_final.to_excel(writer, index=False, sheet_name='Data Bersih')
             workbook = writer.book
             worksheet = writer.sheets['Data Bersih']
-            
             format_angka = workbook.add_format({'num_format': '#,##0.00'})
             
             for i in range(len(df_final.columns)):
                 col_name = df_final.columns[i]
                 col_data = df_final.iloc[:, i]
-                
                 panjang_maksimal = col_data.apply(lambda x: len(str(x)) if pd.notna(x) else 0).max() if not df_final.empty else 0
                 max_len = max(panjang_maksimal, len(col_name)) + 2
                 
@@ -211,7 +200,6 @@ def clean_data_autofit(input_file, output_file):
                     worksheet.set_column(i, i, max_len)
                     
         print(f"--> Sukses! File tersimpan rapi di: {output_file}")
-        
     except Exception as e:
         print(f"--> Error saat menyimpan file: {e}")
 
