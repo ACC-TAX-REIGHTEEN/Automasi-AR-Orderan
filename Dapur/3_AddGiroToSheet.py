@@ -48,8 +48,14 @@ def clean_invoice_str(val):
         return s[:-2]
     return s
 
+def read_excel_auto(file_path, **kwargs):
+    try:
+        return pd.read_excel(file_path, engine='calamine', **kwargs)
+    except Exception:
+        return pd.read_excel(file_path, engine='openpyxl', **kwargs)
+
 print(f"--> Membaca data referensi dari {giro_file}...")
-df_giro = pd.read_excel(giro_file)
+df_giro = read_excel_auto(giro_file)
 
 giro_groups = defaultdict(list)
 for _, row in df_giro.iterrows():
@@ -106,7 +112,7 @@ for no_faktur, tgl_list in giro_groups.items():
 
 print(f"--> Membaca file target {target_file}...")
 try:
-    df_target = pd.read_excel(target_file)
+    df_target = read_excel_auto(target_file)
 except Exception as e:
     print(f"--> ERROR: Gagal membaca file target: {e}")
     exit()
@@ -122,7 +128,7 @@ df_target['Tanggal JT'] = hasil_kolom_jt
 
 print(f"--> Menyimpan hasil perubahan ke {target_file}...")
 try:
-    df_target.to_excel(target_file, index=False)
+    df_target.to_excel(target_file, index=False, engine='openpyxl')
     print("--> Proses berhasil! Kolom 'Tanggal JT' berhasil ditambahkan di paling kanan dan diperbarui.")
 except Exception as e:
     print(f"--> Terjadi error saat menyimpan file: {e}")
