@@ -114,7 +114,11 @@ def parse_max_jt_date(jt_str):
 
 
 def read_excel_auto_header(file_path, sheet_name, target_column):
-    df_raw = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
+    try:
+        df_raw = pd.read_excel(file_path, sheet_name=sheet_name, header=None, engine="calamine")
+    except (ImportError, ValueError):
+        df_raw = pd.read_excel(file_path, sheet_name=sheet_name, header=None, engine="openpyxl")
+
     target_clean = str(target_column).strip().upper()
 
     for idx, row in df_raw.iterrows():
@@ -309,8 +313,8 @@ def run_ar_process():
             indo_months = {
                 "mei": "may",
                 "agu": "aug",
-                "agt": "aug",
                 "ags": "aug",
+                "agt": "aug",
                 "okt": "oct",
                 "nop": "nov",
                 "des": "dec",
@@ -609,7 +613,6 @@ def run_ar_process():
 
 
 if __name__ == "__main__":
-    from datetime import datetime, timedelta
 
     while True:
         try:
