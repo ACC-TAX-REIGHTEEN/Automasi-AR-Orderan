@@ -1,7 +1,13 @@
 import pandas as pd
 from datetime import datetime
+import warnings
 
-df = pd.read_excel('ARClean_temp.xlsx')
+try:
+    df = pd.read_excel('ARClean_temp.xlsx', engine='calamine')
+except Exception:
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        df = pd.read_excel('ARClean_temp.xlsx', engine='openpyxl')
 
 mapping_bulan = {
     1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'Mei', 6: 'Jun',
